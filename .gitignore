@@ -9,6 +9,11 @@ __pycache__/
 # Distribution / packaging
 .Python
 experiments/*
+CIFAR10_model_experiments/
+config/*
+dataset/*
+jobs/
+pre_train/
 build/
 develop-eggs/
 dist/
@@ -86,7 +91,7 @@ ipython_config.py
 .python-version
 
 # pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   Accordixng to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
@@ -130,3 +135,7 @@ dmypy.json
 .pyre/
 
 *.lmdb
+# job submit
+*.sh
+*.png
+*.pth

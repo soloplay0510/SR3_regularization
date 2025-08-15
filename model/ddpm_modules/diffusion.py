@@ -6,7 +6,7 @@ from inspect import isfunction
 from functools import partial
 import numpy as np
 from tqdm import tqdm
-
+from regularization import *
 
 def _warmup_beta(linear_start, linear_end, n_timestep, warmup_frac):
     betas = linear_end * np.ones(n_timestep, dtype=np.float64)
@@ -83,7 +83,9 @@ class GaussianDiffusion(nn.Module):
         channels=3,
         loss_type='l1',
         conditional=True,
-        schedule_opt=None
+        schedule_opt=None,
+        tv1_weight=None,
+        tv2_weight=None
     ):
         super().__init__()
         self.channels = channels
@@ -91,6 +93,8 @@ class GaussianDiffusion(nn.Module):
         self.denoise_fn = denoise_fn
         self.conditional = conditional
         self.loss_type = loss_type
+        self.tv1_weight = tv1_weight
+        self.tv2_weight = tv2_weight
         if schedule_opt is not None:
             pass
             # self.set_new_noise_schedule(schedule_opt)
@@ -185,6 +189,8 @@ class GaussianDiffusion(nn.Module):
         model_mean, posterior_variance, posterior_log_variance = self.q_posterior(
             x_start=x_recon, x_t=x, t=t)
         return model_mean, posterior_variance, posterior_log_variance
+
+
 
     @torch.no_grad()
     def p_sample(self, x, t, clip_denoised=True, repeat_noise=False, condition_x=None):
@@ -282,14 +288,16 @@ class GaussianDiffusion(nn.Module):
                           device=x_start.device).long()
 
         noise = default(noise, lambda: torch.randn_like(x_start))
-        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
-
+        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)# forward
         if not self.conditional:
             x_recon = self.denoise_fn(x_noisy, t)
         else:
             x_recon = self.denoise_fn(
                 torch.cat([x_in['SR'], x_noisy], dim=1), t)
-        loss = self.loss_func(noise, x_recon)
+        
+        y_recon = self. predict_start_from_noise(x_noisy, t, x_recon)
+
+        loss = self.loss_func(noise, x_recon) +  self.tv1_weight*TV1(y_recon)+ self.tv2_weight*TV2(y_recon)
 
         return loss
 

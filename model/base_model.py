@@ -6,6 +6,8 @@ import torch.nn as nn
 class BaseModel():
     def __init__(self, opt):
         self.opt = opt
+        # self.device = torch.device('cuda' if opt['gpu_ids'] else 'cpu')
+
         self.device = torch.device(
             'cuda' if opt['gpu_ids'] is not None else 'cpu')
         self.begin_step = 0

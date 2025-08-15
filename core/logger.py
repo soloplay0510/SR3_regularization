@@ -22,6 +22,10 @@ def parse(args):
     phase = args.phase
     opt_path = args.config
     gpu_ids = args.gpu_ids
+    print("********************")
+    print('gpu_ids:', gpu_ids)
+    print("********************")
+
     enable_wandb = args.enable_wandb
     # remove comments starting with '//'
     json_str = ''
@@ -45,14 +49,34 @@ def parse(args):
     # change dataset length limit
     opt['phase'] = phase
 
+
+
     # export CUDA_VISIBLE_DEVICES
-    if gpu_ids is not None:
+    if gpu_ids is not None:  # CLI arg
         opt['gpu_ids'] = [int(id) for id in gpu_ids.split(',')]
         gpu_list = gpu_ids
-    else:
+    elif opt['gpu_ids'] is not None:  # from config file
         gpu_list = ','.join(str(x) for x in opt['gpu_ids'])
+    else:  # neither specified → use CPU
+        gpu_list = ''
+        opt['gpu_ids'] = None
+        print("No GPU IDs specified, using CPU only.")
+
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_list
-    print('export CUDA_VISIBLE_DEVICES=' + gpu_list)
+    print('export CUDA_VISIBLE_DEVICES=' + gpu_list if gpu_list else "CPU mode")
+
+
+
+    # if gpu_ids is not None:
+    #     opt['gpu_ids'] = [int(id) for id in gpu_ids.split(',')]
+    #     gpu_list = gpu_ids
+    # else:
+    #     print("gpu_ids is not None", opt['gpu_ids'])
+    #     gpu_list = ','.join(str(x) for x in opt['gpu_ids'])
+    
+    # os.environ['CUDA_VISIBLE_DEVICES'] = gpu_list
+    # print('export CUDA_VISIBLE_DEVICES=' + gpu_list)   
+
     if len(gpu_list) > 1:
         opt['distributed'] = True
     else:

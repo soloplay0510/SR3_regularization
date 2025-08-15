@@ -6,6 +6,7 @@ from inspect import isfunction
 from functools import partial
 import numpy as np
 from tqdm import tqdm
+from regularization import *
 
 
 def _warmup_beta(linear_start, linear_end, n_timestep, warmup_frac):
@@ -69,7 +70,9 @@ class GaussianDiffusion(nn.Module):
         channels=3,
         loss_type='l1',
         conditional=True,
-        schedule_opt=None
+        schedule_opt=None,
+        tv1_weight=None,
+        tv2_weight=None
     ):
         super().__init__()
         self.channels = channels
@@ -80,7 +83,8 @@ class GaussianDiffusion(nn.Module):
         if schedule_opt is not None:
             pass
             # self.set_new_noise_schedule(schedule_opt)
-
+        self.tv1_weight = tv1_weight
+        self.tv2_weight = tv2_weight
     def set_loss(self, device):
         if self.loss_type == 'l1':
             self.loss_func = nn.L1Loss(reduction='sum').to(device)
@@ -229,6 +233,7 @@ class GaussianDiffusion(nn.Module):
                 size=b
             )
         ).to(x_start.device)
+        # print('sqrt_alphas_cumprod_prev', self.sqrt_alphas_cumprod_prev.shape)
         continuous_sqrt_alpha_cumprod = continuous_sqrt_alpha_cumprod.view(
             b, -1)
 
@@ -241,8 +246,8 @@ class GaussianDiffusion(nn.Module):
         else:
             x_recon = self.denoise_fn(
                 torch.cat([x_in['SR'], x_noisy], dim=1), continuous_sqrt_alpha_cumprod)
-
-        loss = self.loss_func(noise, x_recon)
+        y_recon = self.predict_start_from_noise(x_noisy, t-1, x_recon)
+        loss = self.loss_func(noise, x_recon)+   self.tv1_weight*TV1(y_recon)+ self.tv2_weight*TV2(y_recon)
         return loss
 
     def forward(self, x, *args, **kwargs):
