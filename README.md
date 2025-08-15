@@ -109,6 +109,7 @@ python data/prepare_data.py  --path [dataset root]  --out [output root] --size 1
 then you need to change the datasets config to your data path and image resolution: 
 
 ```json
+# Use config/celebahq.json for updated features with total variations.
 "datasets": {
     "train": {
         "dataroot": "dataset/ffhq_16_128", // [output root] in prepare.py script
@@ -118,8 +119,16 @@ then you need to change the datasets config to your data path and image resoluti
     },
     "val": {
         "dataroot": "dataset/celebahq_16_128", // [output root] in prepare.py script
+        "n_run":1 // can be changed to e.g. 200 to evaluate the model with multiple runs' average
     }
 },
+"model":{
+     "loss": {
+            "type": "l1", // l1 or l2
+            "TV1_weight": 0.0,//Anisotropic Total Variation Loss Weight
+            "TV2_weight": 0.0//Smoothed Isotropic Total Variation Loss
+        }
+}
 ```
 
 #### Own Data
