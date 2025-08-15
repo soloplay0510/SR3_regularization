@@ -125,7 +125,7 @@ then you need to change the datasets config to your data path and image resoluti
 "model":{
      "loss": {
             "type": "l1", // l1 or l2
-            "TV1_weight": 0.0,//Anisotropic Total Variation Loss Weight
+            "TV1_weight": 0.0,//Anisotropic Total Variation Loss Weight, implemented in regularization.py
             "TV2_weight": 0.0//Smoothed Isotropic Total Variation Loss
         }
 }
@@ -181,7 +181,14 @@ python sr.py -p val -c config/sr_sr3.json
 
 # Quantitative evaluation alone using SSIM/PSNR metrics on given result root
 python eval.py -p [result root]
+
+
+# Modify and use the history.sh for plots of evaluation history of metrics, which combines the logs from multiple consecutive runs and extract the SSIM and PSNR to generate images. The plotting file is plot_history.py, which can configure the logs to be compared and max number of epochs.
+python plot_history.py \
+    tv2.log tv2_01.log tv2_10.log\
+    --epoch-only --output comparison_epoch_tv2.png --max-epoch 60
 ```
+
 
 ### Inference Alone
 
