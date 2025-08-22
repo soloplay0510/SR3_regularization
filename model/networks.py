@@ -97,7 +97,11 @@ def define_G(opt):
         attn_res=model_opt['unet']['attn_res'],
         res_blocks=model_opt['unet']['res_blocks'],
         dropout=model_opt['unet']['dropout'],
-        image_size=model_opt['diffusion']['image_size']
+        image_size=model_opt['diffusion']['image_size'],
+        final_activation=model_opt['unet']['final_activation'],
+        nb_iterations=model_opt['unet']['nb_iterations'],
+        nb_kerhalfsize=model_opt['unet']['nb_kerhalfsize'],
+        leaky_alpha=model_opt['unet']['leaky_alpha']
     )
     netG = diffusion.GaussianDiffusion(
         model,

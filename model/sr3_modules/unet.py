@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from inspect import isfunction
+from stdrelu import STDReLu,STDLeakyReLu
 
 
 def exists(x):
@@ -75,6 +76,26 @@ class Downsample(nn.Module):
 
 
 # building block modules
+class FinalBlock(nn.Module):
+    def __init__(self, dim, dim_out, groups=32, dropout=0,activation_type="swish",nb_iterations=10,nb_kerhalfsize=1,leaky_alpha=0.2):
+        super().__init__()
+
+        activation_map = {
+            "swish": lambda dim: Swish(),
+            "stdrelu": lambda dim: STDReLu(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize),
+            "stdleakyrelu": lambda dim: STDLeakyReLu(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize, alpha=leaky_alpha),
+        }
+        Activation = activation_map[activation_type](dim)
+
+        self.block = nn.Sequential(
+            nn.GroupNorm(groups, dim),
+            Activation,
+            nn.Dropout(dropout) if dropout != 0 else nn.Identity(),
+            nn.Conv2d(dim, dim_out, 3, padding=1)
+        )
+
+    def forward(self, x):
+        return self.block(x)
 
 
 class Block(nn.Module):
@@ -170,7 +191,11 @@ class UNet(nn.Module):
         res_blocks=3,
         dropout=0,
         with_noise_level_emb=True,
-        image_size=128
+        image_size=128,
+        final_activation="swish",
+        nb_iterations=10,
+        nb_kerhalfsize=1,
+        leaky_alpha=0.2
     ):
         super().__init__()
 
@@ -230,7 +255,7 @@ class UNet(nn.Module):
 
         self.ups = nn.ModuleList(ups)
 
-        self.final_conv = Block(pre_channel, default(out_channel, in_channel), groups=norm_groups)
+        self.final_conv = FinalBlock(pre_channel, default(out_channel, in_channel), groups=norm_groups,activation_type=final_activation,nb_iterations=nb_iterations,nb_kerhalfsize=nb_kerhalfsize,leaky_alpha=leaky_alpha)
 
     def forward(self, x, time):
         t = self.noise_level_mlp(time) if exists(
