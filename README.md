@@ -127,7 +127,15 @@ then you need to change the datasets config to your data path and image resoluti
             "type": "l1", // l1 or l2
             "TV1_weight": 0.0,//Anisotropic Total Variation Loss Weight, implemented in regularization.py
             "TV2_weight": 0.0//Smoothed Isotropic Total Variation Loss
+        },
+        "unet": {
+            //....// other configurations of Unet 
+            "final_activation": "stdleakyrelu", // default "swish", "stdrelu" or "stdleakyrelu" for the activation function of the final block of Unet
+            "nb_iterations" :10, // number of iterations for the STDReLu/STDReLuLeaky
+            "nb_kerhalfsize": 1, // half size of the kernel for the STDReLu/STDReLuLeaky
+            "leaky_alpha": 0.2 // alpha for the leaky relu
         }
+
 }
 ```
 
