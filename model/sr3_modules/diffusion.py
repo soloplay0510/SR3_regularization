@@ -255,8 +255,17 @@ class GaussianDiffusion(nn.Module):
             x_recon = self.denoise_fn(
                 torch.cat([x_in['SR'], x_noisy], dim=1), continuous_sqrt_alpha_cumprod)
         y_recon = self.predict_start_from_noise(x_noisy, t-1, x_recon)
-        loss = self.loss_func(noise, x_recon)+   self.tv1_weight*TV1(y_recon)+ self.tv2_weight*TV2(y_recon)
-        return loss
+        loss_noise = self.loss_func(noise, x_recon)
+        loss_TV1 = self.tv1_weight*TV1(y_recon)
+        loss_TV2 = self.tv2_weight*TV2(y_recon)
+        l_total = loss_noise + loss_TV1+ loss_TV2
+        return  {
+            "total": l_total,
+            "loss_noise": loss_noise,
+            "loss_TV1": loss_TV1,
+            "loss_TV2": loss_TV2,
+        }
+
 
     def forward(self, x, *args, **kwargs):
         return self.p_losses(x, *args, **kwargs)

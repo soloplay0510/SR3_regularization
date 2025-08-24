@@ -1,7 +1,7 @@
 #!/bin/bash 
-#SBATCH -J celeb_v0_train_celeb_1run 
-#SBATCH -o ./logs/celeb_v0_train_celeb_1run.o%j 
-#SBATCH -t 24:00:00
+#SBATCH -J celeb_v0_train_stdrelu 
+#SBATCH -o ./logs/celeb_v0_train_stdrelu.o%j 
+#SBATCH -t 30:00:00
 #SBATCH -N 1 -n 1
 #SBATCH --gpus=1
 source /project/mwang/zxu29/anaconda3/bin/activate 

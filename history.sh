@@ -40,3 +40,4 @@ python plot_history.py \
 python plot_history.py \
     tv0.log tv1.log tv2.log\
     --epoch-only --output comparison_epoch.png --max-epoch 60
+python plot_losses.py ./experiments/celeb_tv0_stdrelu_250824_154824/logs/train.log --out_csv plots/losses.csv --out_png plots/losses.png

@@ -10,6 +10,7 @@ __pycache__/
 .Python
 experiments/*
 CIFAR10_model_experiments/
+plots/
 logs/
 config/*
 dataset/*

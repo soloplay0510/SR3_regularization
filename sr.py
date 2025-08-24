@@ -301,7 +301,6 @@ if __name__ == "__main__":
             all_ssim_means, all_ssim_stds, len(val_loader), result_path, metric="SSIM")
         Metrics.plot_eval_metrics(
             all_sam_means, all_sam_stds, len(val_loader), result_path, metric="SAM")
-        print('all_sam_means:', all_sam_means)
         # log
         logger.info('# Validation # PSNR: {:.4e}'.format(avg_psnr))
         logger.info('# Validation # SSIM: {:.4e}'.format(avg_ssim))
