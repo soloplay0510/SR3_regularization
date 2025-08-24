@@ -9,6 +9,7 @@
         "checkpoint": "checkpoint",
         // "resume_state": null
         "resume_state": null
+        // "pre_train/I660000_E88"
         // "pre_train/FFHQ/I640000_E37"
         // "pre_train/CIFAR-10/I210000_E15"
         // "experiments/sr_cifar10_sr3_16_128_250807_104827/checkpoint/I300000_E21" //pretrain model or training state
@@ -33,8 +34,8 @@
             "datatype": "img", //lmdb or img, path of img files
             "l_resolution": 16,
             "r_resolution": 128,
-            "data_len": 10, // data length in validation 
-            "n_run":1
+            "data_len": 2, // data length in validation 
+            "n_run":2
         }
     },
     "model": {
@@ -56,7 +57,7 @@
             ],
             "res_blocks": 2,
             "dropout": 0.2,
-            "final_activation": "stdleakyrelu", // default swish, stdrelu or stdleakyrelu
+            "final_activation": "swish", // default swish, stdrelu or stdleakyrelu
             "nb_iterations" :10, // number of iterations for the STDReLu/STDReLuLeaky
             "nb_kerhalfsize": 1, // half size of the kernel for the STDReLu/STDReLuLeaky
             "leaky_alpha": 0.2 // alpha for the leaky relu
@@ -87,8 +88,8 @@
         }
     },
     "train": {
-        "n_iter": 1000,
-        "val_freq": 1e4,
+        "n_iter": 2000,
+        "val_freq": 1e2,
         "save_checkpoint_freq": 1e4,
         "print_freq": 200,
         "optimizer": {
