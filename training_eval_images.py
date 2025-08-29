@@ -3,7 +3,7 @@ import re
 from PIL import Image
 import math
 
-root_dir = "experiments/celeb_tv0_stdrelu_250824_162052/results"
+root_dir = "experiments/celeb_tv0_stdrelu_250825_151239/results"
 output_dir = "plots"
 os.makedirs(output_dir, exist_ok=True)
 
@@ -52,6 +52,6 @@ for idx, items in groups.items():
         y = row * img_h
         canvas.paste(im, (x, y))
 
-    out = os.path.join(output_dir, f"group_{idx}_sr.png")
+    out = os.path.join(output_dir, f"relu_group_{idx}_sr_2.png")
     canvas.save(out)
     print(f"Saved: {out}")

@@ -110,12 +110,14 @@ if __name__ == "__main__":
 
                     diffusion.set_new_noise_schedule(
                         opt['model']['beta_schedule']['val'], schedule_phase='val')
-                    gen = torch.Generator(device=diffusion.device)
-                    gen.manual_seed(1234)
+                    
                     for _,  val_data in enumerate(val_loader):
                         idx += 1
                         diffusion.feed_data(val_data)
+                        gen = torch.Generator(device=diffusion.device)
+                        gen.manual_seed(1234)
                         diffusion.test(continous=False,generator=gen)
+
                         visuals = diffusion.get_current_visuals()
                         sr_img = Metrics.tensor2img(visuals['SR'])  # uint8
                         hr_img = Metrics.tensor2img(visuals['HR'])  # uint8

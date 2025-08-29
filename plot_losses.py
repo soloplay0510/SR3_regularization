@@ -73,13 +73,15 @@ def plot_losses(df, metrics=None, out_path="plots/loss_curves.png", title=None):
     for m in metrics:
         if m in df.columns:
             plt.plot(df["step"], df[m], label=m)
-
     # X ticks only at epoch starts
     epoch_starts = df.groupby("epoch")["step"].min().tolist()
     epoch_labels = [str(e) for e in sorted(df["epoch"].unique())]
     plt.xticks(epoch_starts, epoch_labels)
 
     plt.xlabel("Epoch")
+    # plt.xscale('log')
+
+
     plt.ylabel("Loss")
     plt.title(title or "Loss components vs iterations (x ticks = epochs)")
     plt.legend(loc="best")
