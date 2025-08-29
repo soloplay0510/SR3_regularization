@@ -8,4 +8,6 @@ opencv-python
 pillow
 tensorboardx
 wandb
-
+pillow
+scipy
+pywavelets

@@ -126,7 +126,10 @@ then you need to change the datasets config to your data path and image resoluti
      "loss": {
             "type": "l1", // l1 or l2
             "TV1_weight": 0.0,//Anisotropic Total Variation Loss Weight, implemented in regularization.py
-            "TV2_weight": 0.0//Smoothed Isotropic Total Variation Loss
+            "TV2_weight": 0.0,
+            "TVF_weight": 0.0, // fractional TV
+            "TVF_alpha": 1.6,// fractional TV hyper parameter
+            "wavelet_l1_weight": 1.0  //wavelet
         },
         "unet": {
             //....// other configurations of Unet 
@@ -191,12 +194,19 @@ python sr.py -p val -c config/sr_sr3.json
 python eval.py -p [result root]
 
 
-# Modify and use the history.sh for plots of evaluation history of metrics, which combines the logs from multiple consecutive runs and extract the SSIM and PSNR to generate images. The plotting file is plot_history.py, which can configure the logs to be compared and max number of epochs. 
-python plot_history.py \
-    tv2.log tv2_01.log tv2_10.log\
-    --epoch-only --output comparison_epoch_tv2.png --max-epoch 60
-#plot_losses.py will plot curves of train losses from specified log file.
-python plot_losses.py ./experiments/celeb_tv0_stdrelu_250824_154824/logs/train.log --out_csv plots/losses.csv --out_png plots/losses.png
+#All plots and image grids are produced by the provided shell file. Please open and read that shell file to see exactly what it does and to adjust any paths.
+#What it does (at a glance):
+# a. Concatenates multiple train/val logs into ./plots/*.log
+# b. Calls the plotting scripts to generate comparison figures and CSVs
+# c. Builds evaluation image grids into ./plots/
+#How to use:
+#1.Ensure the plots/ folder exists.
+#2.Read the shell file, update paths/labels and plotting configurations if needed.
+#3.
+chmod +x <the-shell-file>.sh
+#4.
+./evaluation_plot.sh
+#All outputs will appear under ./plots/.
 ```
 
 

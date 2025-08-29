@@ -1,11 +1,11 @@
 #!/bin/bash 
-#SBATCH -J celeb_v0_train
-#SBATCH -o ./logs/celeb_v0_train.o%j 
+#SBATCH -J celeb_v0_train_ftv
+#SBATCH -o ./logs/celeb_v0_train_ftv.o%j 
 #SBATCH -t 40:00:00
 #SBATCH -N 1 -n 1
 #SBATCH --gpus=1
 source /project/mwang/zxu29/anaconda3/bin/activate 
-conda activate pytorch
+conda activate /project/mwang/wang55/conda_envs/pytorch_user         
 ml CUDA
 nvidia-smi   
 python -c "import torch; print(torch.cuda.is_available())"

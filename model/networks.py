@@ -111,7 +111,10 @@ def define_G(opt):
         conditional=model_opt['diffusion']['conditional'],
         schedule_opt=model_opt['beta_schedule']['train'],
         tv1_weight=model_opt['loss']['TV1_weight'],
-        tv2_weight=model_opt['loss']['TV2_weight']
+        tv2_weight=model_opt['loss']['TV2_weight'],
+        tvf_weight=model_opt['loss']['TVF_weight'],
+        tvf_alpha=model_opt['loss']['TVF_alpha'],
+        wavelet_l1_weight=model_opt['loss']['wavelet_l1_weight']
     )
     if opt['phase'] == 'train':
         # init_weights(netG, init_type='kaiming', scale=0.1)

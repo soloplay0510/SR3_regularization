@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-
+import numpy as np
 def TV1(img, epsilon=1e-6):
     """
     Computes the smooth total variation (TV) loss for a batch of images.
@@ -86,7 +86,7 @@ def frac_diff_1d(img, alpha, axis, n_terms=20):
     return out
 
 
-def FTV(img, alpha=1.0, n_terms=20, epsilon=1e-6):
+def FTV(img, alpha=1.6, n_terms=20, epsilon=1e-6):
     """
     Fractional-order gradients. Matches isotropic TV when alpha=1.
     """

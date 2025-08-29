@@ -72,7 +72,10 @@ class GaussianDiffusion(nn.Module):
         conditional=True,
         schedule_opt=None,
         tv1_weight=None,
-        tv2_weight=None
+        tv2_weight=None,
+        tvf_weight=None,
+        tvf_alpha=None,
+        wavelet_l1_weight = None,
     ):
         super().__init__()
         self.channels = channels
@@ -85,6 +88,10 @@ class GaussianDiffusion(nn.Module):
             # self.set_new_noise_schedule(schedule_opt)
         self.tv1_weight = tv1_weight
         self.tv2_weight = tv2_weight
+        self.tvf_weight = tvf_weight
+        self.tvf_alpha = tvf_alpha
+
+        self.wavelet_l1_weight = wavelet_l1_weight
     def set_loss(self, device):
         if self.loss_type == 'l1':
             self.loss_func = nn.L1Loss(reduction='sum').to(device)
@@ -258,12 +265,16 @@ class GaussianDiffusion(nn.Module):
         loss_noise = self.loss_func(noise, x_recon)
         loss_TV1 = self.tv1_weight*TV1(y_recon)
         loss_TV2 = self.tv2_weight*TV2(y_recon)
-        l_total = loss_noise + loss_TV1+ loss_TV2
+        loss_TVF = self.tvf_weight*FTV(y_recon, alpha=self.tvf_alpha)
+        loss_wave = self.wavelet_l1_weight*waveL1(y_recon)
+        l_total = loss_noise + loss_TV1+ loss_TV2 + loss_TVF+ loss_wave
         return  {
             "total": l_total,
             "loss_noise": loss_noise,
             "loss_TV1": loss_TV1,
             "loss_TV2": loss_TV2,
+            "loss_TVF": loss_TVF,
+            "loss_wave_l1":loss_wave
         }
 
 

@@ -1,5 +1,5 @@
 {
-    "name": "celeb_tv0",
+    "name": "celeb_tv0_tvf",
     "phase": "train", // train or val
     "gpu_ids": [0],
     "path": { //set the path
@@ -82,7 +82,10 @@
         "loss": {
             "type": "l1", // l1 or l2
             "TV1_weight": 0.0,
-            "TV2_weight": 0.0
+            "TV2_weight": 0.0,
+            "TVF_weight": 1.0,
+            "TVF_alpha": 1.6,
+            "wavelet_l1_weight": 0.0    
         }
     },
     "train": {
