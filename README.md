@@ -39,36 +39,6 @@ There are some implementation details that may vary from the paper's description
 - [x] [Weights and Biases Logging](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement/pull/44) 🌟 NEW
 
 
-
-## Results
-
-*Note:*  We set the maximum reverse steps budget to $2000$. We limited the model parameters in `Nvidia 1080Ti`, **image noise** and **hue deviation** occasionally appear in high-resolution images, resulting in low scores.  There is a lot of room for optimization.  **We are welcome to any contributions for more extensive experiments and code enhancements.**
-
-| Tasks/Metrics        | SSIM(+) | PSNR(+) | FID(-)  | IS(+)   |
-| -------------------- | ----------- | -------- | ---- | ---- |
-| 16×16 -> 128×128 | 0.675       | 23.26    | - | - |
-| 64×64 -> 512×512     | 0.445 | 19.87 | - | - |
-| 128×128 | - | - | | |
-| 1024×1024 | - | - |      |      |
-
-- #### 16×16 -> 128×128 on FFHQ-CelebaHQ [[More Results](https://drive.google.com/drive/folders/1Vk1lpHzbDf03nME5fV9a-lWzSh3kMK14?usp=sharing)]
-
-| <img src="./misc/sr_process_16_128_0.png" alt="show" style="zoom:90%;" /> |  <img src="./misc/sr_process_16_128_1.png" alt="show" style="zoom:90%;" />    |   <img src="./misc/sr_process_16_128_2.png" alt="show" style="zoom:90%;" />   |
-| ------------------------------------------------------------ | ---- | ---- |
-
-- #### 64×64 -> 512×512 on FFHQ-CelebaHQ [[More Results](https://drive.google.com/drive/folders/1yp_4xChPSZUeVIgxbZM-e3ZSsSgnaR9Z?usp=sharing)]
-
-| <img src="./misc/sr_64_512_0_inf.png" alt="show" style="zoom:90%;" /> | <img src="./misc/sr_64_512_0_sr.png" alt="show" style="zoom:90%;" /> | <img src="./misc/sr_64_512_0_hr.png" alt="show" style="zoom:90%;" /> |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| <img src="./misc/sr_64_512_1_sr.png" alt="show" style="zoom:90%;" /> | <img src="./misc/sr_64_512_2_sr.png" alt="show" style="zoom:90%;" /> | <img src="./misc/sr_64_512_3_sr.png" alt="show" style="zoom:90%;" /> |
-
-- #### 128×128 face generation on FFHQ [[More Results](https://drive.google.com/drive/folders/13AsjRwDw4wMmL0bK7wPd2rP7ds7eyAMh?usp=sharing)]
-
-| <img src="./misc/sample_process_128_0.png" alt="show" style="zoom:90%;" /> |  <img src="./misc/sample_process_128_1.png" alt="show" style="zoom:90%;" />    |   <img src="./misc/sample_process_128_2.png" alt="show" style="zoom:90%;" />   |
-| ------------------------------------------------------------ | ---- | ---- |
-
-
-
 ## Usage
 ### Environment
 ```python
@@ -76,17 +46,8 @@ pip install -r requirement.txt
 ```
 
 ### Pretrained Model
-
-This paper is based on "Denoising Diffusion Probabilistic Models", and we build both DDPM/SR3 network structures, which use timesteps/gamma as model embedding inputs, respectively. In our experiments, the SR3 model can achieve better visual results with the same reverse steps and learning rate. You can select the JSON files with annotated suffix names to train the different models.
-
-| Tasks                             | Platform（Code：qwer)                                        | 
-| --------------------------------- | ------------------------------------------------------------ |
-| 16×16 -> 128×128 on FFHQ-CelebaHQ | [Google Drive](https://drive.google.com/drive/folders/12jh0K8XoM1FqpeByXvugHHAF3oAZ8KRu?usp=sharing)\|[Baidu Yun](https://pan.baidu.com/s/1OzsGZA2Vmq1ZL_VydTbVTQ) |  
-| 64×64 -> 512×512 on FFHQ-CelebaHQ | [Google Drive](https://drive.google.com/drive/folders/1mCiWhFqHyjt5zE4IdA41fjFwCYdqDzSF?usp=sharing)\|[Baidu Yun](https://pan.baidu.com/s/1orzFmVDxMmlXQa2Ty9zY3g) |   
-| 128×128 face generation on FFHQ   | [Google Drive](https://drive.google.com/drive/folders/1ldukMgLKAxE7qiKdFJlu-qubGlnW-982?usp=sharing)\|[Baidu Yun](https://pan.baidu.com/s/1Vsd08P1A-48OGmnRV0E7Fg ) | 
-
 ```python
-# Download the pretrained model and edit [sr|sample]_[ddpm|sr3]_[resolution option].json about "resume_state":
+# Identify the pretrained model and edit [sr|sample]_[ddpm|sr3]_[resolution option].json about "resume_state":
 "resume_state": [your pretrained model's path]
 ```
 
@@ -143,9 +104,7 @@ then you need to change the datasets config to your data path and image resoluti
 ```
 
 #### Own Data
-
 You also can use your image data by following steps, and we have some examples in dataset folder.
-
 At first, you should organize the images layout like this, this step can be finished by `data/prepare_data.py` automatically:
 
 ```shell
@@ -203,7 +162,7 @@ python eval.py -p [result root]
 #1.Ensure the plots/ folder exists.
 #2.Read the shell file, update paths/labels and plotting configurations if needed.
 #3.
-chmod +x <the-shell-file>.sh
+chmod +x evaluation_plot.sh
 #4.
 ./evaluation_plot.sh
 #All outputs will appear under ./plots/.
