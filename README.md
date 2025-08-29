@@ -16,19 +16,6 @@ There are some implementation details that may vary from the paper's description
 **If you just want to upscale $(64 \times 64)\text{px} \rightarrow (512 \times 512)\text{px}$ images using the pre-trained model, check out [this google colab script](https://colab.research.google.com/drive/1G1txPI1GKueKH0cSi_DgQFKwfyJOXlhY?usp=sharing).**
 
 ## Status
-
-**★★★ NEW: The follow-up [Palette-Image-to-Image-Diffusion-Models](https://arxiv.org/abs/2111.05826) is now available; See the details [here](https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models) ★★★**
-
-### Conditional Generation (with Super Resolution)
-
-- [x] 16×16 -> 128×128 on FFHQ-CelebaHQ
-- [x] 64×64 -> 512×512 on FFHQ-CelebaHQ
-
-### Unconditional Generation
-
-- [x] 128×128 face generation on FFHQ
-- [ ] ~~1024×1024 face generation by a cascade of 3 models~~
-
 ### Training Step
 
 - [x] log / logger
@@ -154,14 +141,14 @@ python eval.py -p [result root]
 
 
 #All plots and image grids are produced by the provided shell file. Please open and read that shell file to see exactly what it does and to adjust any paths.
-#What it does (at a glance):
-# a. Concatenates multiple train/val logs into ./plots/*.log
-# b. Calls the plotting scripts to generate comparison figures and CSVs
-# c. Builds evaluation image grids into ./plots/
-#How to use:
-#1.Ensure the plots/ folder exists.
-#2.Read the shell file, update paths/labels and plotting configurations if needed.
-#3.
+    #What it does (at a glance):
+        # a. Concatenates multiple train/val logs into ./plots/*.log
+        # b. Calls the plotting scripts to generate comparison figures and CSVs
+        # c. Builds evaluation image grids into ./plots/
+    #How to use:
+        #1.Ensure the plots/ folder exists.
+        #2.Read the shell file, update paths/labels and plotting configurations if needed.
+        #3.
 chmod +x evaluation_plot.sh
 #4.
 ./evaluation_plot.sh
@@ -178,24 +165,6 @@ Set the  image path like steps in `Own Data`, then run the script:
 python infer.py -c [config file]
 ```
 
-## Weights and Biases 🎉
-
-The library now supports experiment tracking, model checkpointing and model prediction visualization with [Weights and Biases](https://wandb.ai/site). You will need to [install W&B](https://pypi.org/project/wandb/) and login by using your [access token](https://wandb.ai/authorize). 
-
-```
-pip install wandb
-
-# get your access token from wandb.ai/authorize
-wandb login
-```
-
-W&B logging functionality is added to the `sr.py`, `sample.py` and `infer.py` files. You can pass `-enable_wandb` to start logging.
-
-- `-log_wandb_ckpt`: Pass this argument along with `-enable_wandb` to save model checkpoints as [W&B Artifacts](https://docs.wandb.ai/guides/artifacts). Both `sr.py` and `sample.py` is enabled with model checkpointing. 
-- `-log_eval`: Pass this argument along with `-enable_wandb` to save the evaluation result as interactive [W&B Tables](https://docs.wandb.ai/guides/data-vis). Note that only `sr.py` is enabled with this feature. If you run `sample.py` in eval mode, the generated images will automatically be logged as image media panel. 
-- `-log_infer`: While running `infer.py` pass this argument along with `-enable_wandb` to log the inference results as interactive W&B Tables. 
-
-You can find more on using these features [here](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement/pull/44). 🚀
 
 
 ## Acknowledgements
