@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from inspect import isfunction
-from stdrelu import STDReLu,STDLeakyReLu
+from stdrelu import STDReLu,STDLeakyReLu,STDSLReLU
 
 
 def exists(x):
@@ -77,13 +77,16 @@ class Downsample(nn.Module):
 
 # building block modules
 class FinalBlock(nn.Module):
-    def __init__(self, dim, dim_out, groups=32, dropout=0,activation_type="swish",nb_iterations=10,nb_kerhalfsize=1,leaky_alpha=0.2):
+    def __init__(self, dim, dim_out, groups=32, dropout=0,activation_type="swish",nb_iterations=10,nb_kerhalfsize=1,leaky_alpha=0.2,sleaky_beta = 10.0):
         super().__init__()
 
         activation_map = {
             "swish": lambda dim: Swish(),
             "stdrelu": lambda dim: STDReLu(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize),
             "stdleakyrelu": lambda dim: STDLeakyReLu(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize, alpha=leaky_alpha),
+            "s_stdleakyrelu": lambda dim: STDSLReLU(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize, alpha=leaky_alpha,beta = sleaky_beta ),
+            "relu": lambda dim: nn.ReLU(inplace=True),
+            "leakyrelu": lambda dim: nn.LeakyReLU(negative_slope=leaky_alpha, inplace=True),
         }
         Activation = activation_map[activation_type](dim)
 

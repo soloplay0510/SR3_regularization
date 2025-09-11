@@ -101,7 +101,9 @@ def define_G(opt):
         final_activation=model_opt['unet']['final_activation'],
         nb_iterations=model_opt['unet']['nb_iterations'],
         nb_kerhalfsize=model_opt['unet']['nb_kerhalfsize'],
-        leaky_alpha=model_opt['unet']['leaky_alpha']
+        leaky_alpha=model_opt['unet']['leaky_alpha'],
+        sleaky_beta=model_opt['unet']['sleaky_beta']
+
     )
     netG = diffusion.GaussianDiffusion(
         model,

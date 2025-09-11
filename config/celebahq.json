@@ -1,5 +1,5 @@
 {
-    "name": "celeb_tv0_tvf",
+    "name": "celeb_tv0_s_leakyrelu",
     "phase": "train", // train or val
     "gpu_ids": [0],
     "path": { //set the path
@@ -55,10 +55,11 @@
             ],
             "res_blocks": 2,
             "dropout": 0.2,
-            "final_activation": "swish", // default swish, stdrelu or stdleakyrelu
+            "final_activation": "s_stdleakyrelu", // default swish. Can be chosen from stdrelu, stdleakyrelu, relu, s_stdleakyrelu,and leakyrelu
             "nb_iterations" :10, // number of iterations for the STDReLu/STDReLuLeaky
             "nb_kerhalfsize": 1, // half size of the kernel for the STDReLu/STDReLuLeaky
-            "leaky_alpha": 0.2 // alpha for the leaky relu
+            "leaky_alpha": 0.2, // alpha for the leaky relu
+            "sleaky_beta" : 10.0 // beta for the s_stdleakyrelu
         },
         "beta_schedule": { // use munual beta_schedule for acceleration
             "train": {
@@ -83,7 +84,7 @@
             "type": "l1", // l1 or l2
             "TV1_weight": 0.0,
             "TV2_weight": 0.0,
-            "TVF_weight": 1000.0,
+            "TVF_weight": 0.0,
             "TVF_alpha": 1.6,//default is 1.6
             "wavelet_l1_weight": 0.0, //10000.0,
             "wavelet_type": "haar" //default is "haar". Other options includes "db", "sym", "coif"  (https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html)

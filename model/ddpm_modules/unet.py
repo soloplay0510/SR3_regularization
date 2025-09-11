@@ -180,7 +180,8 @@ class UNet(nn.Module):
         final_activation="swish",
         nb_iterations=10,
         nb_kerhalfsize=1,
-        leaky_alpha=0.2
+        leaky_alpha=0.2,
+        sleaky_beta = 10.0
     ):
         super().__init__()
 

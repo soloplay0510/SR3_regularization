@@ -81,10 +81,11 @@ then you need to change the datasets config to your data path and image resoluti
         },
         "unet": {
             //....// other configurations of Unet 
-            "final_activation": "stdleakyrelu", // default "swish", "stdrelu" or "stdleakyrelu" for the activation function of the final block of Unet
+            "final_activation": "s_stdleakyrelu", // default swish. Can be chosen from stdrelu, stdleakyrelu, relu, s_stdleakyrelu,and leakyrelu
             "nb_iterations" :10, // number of iterations for the STDReLu/STDReLuLeaky
             "nb_kerhalfsize": 1, // half size of the kernel for the STDReLu/STDReLuLeaky
-            "leaky_alpha": 0.2 // alpha for the leaky relu
+            "leaky_alpha": 0.2, // alpha for the leaky relu
+            "sleaky_beta" : 10.0 // beta for the s_stdleakyrelu
         }
 
 }
