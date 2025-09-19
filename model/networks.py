@@ -82,9 +82,7 @@ def init_weights(net, init_type='kaiming', scale=1, std=0.02):
 # Generator
 def define_G(opt):
     model_opt = opt['model']
-    if model_opt['which_model_G'] == 'ddpm':
-        from .ddpm_modules import diffusion, unet
-    elif model_opt['which_model_G'] == 'sr3':
+    if model_opt['which_model_G'] == 'sr3':
         from .sr3_modules import diffusion, unet
     if ('norm_groups' not in model_opt['unet']) or model_opt['unet']['norm_groups'] is None:
         model_opt['unet']['norm_groups']=32
@@ -99,11 +97,7 @@ def define_G(opt):
         dropout=model_opt['unet']['dropout'],
         image_size=model_opt['diffusion']['image_size'],
         final_activation=model_opt['unet']['final_activation'],
-        nb_iterations=model_opt['unet']['nb_iterations'],
-        nb_kerhalfsize=model_opt['unet']['nb_kerhalfsize'],
         leaky_alpha=model_opt['unet']['leaky_alpha'],
-        sleaky_beta=model_opt['unet']['sleaky_beta']
-
     )
     netG = diffusion.GaussianDiffusion(
         model,

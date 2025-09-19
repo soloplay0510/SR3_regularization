@@ -259,7 +259,7 @@ class UNet(nn.Module):
 
         self.ups = nn.ModuleList(ups)
 
-        self.final_conv = FinalBlock(pre_channel, default(out_channel, in_channel), groups=norm_groups,activation_type=final_activation,nb_iterations=nb_iterations,nb_kerhalfsize=nb_kerhalfsize,leaky_alpha=leaky_alpha)
+        self.final_conv = FinalBlock(pre_channel, default(out_channel, in_channel), groups=norm_groups,activation_type=final_activation,nb_iterations=nb_iterations,nb_kerhalfsize=nb_kerhalfsize,leaky_alpha=leaky_alpha, sleaky_beta = sleaky_beta)
 
     def forward(self, x, time):
         t = self.noise_level_mlp(time) if exists(
