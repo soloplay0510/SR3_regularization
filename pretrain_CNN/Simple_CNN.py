@@ -16,7 +16,8 @@ class SimpleCNN(nn.Module):
         self.pixel_shuffle = nn.PixelShuffle(scale_factor)
 
     def forward(self, x):
-        x_up = F.interpolate(x, scale_factor=4, mode='bicubic', align_corners=False)
+        x_skip = x
+        x_up = F.interpolate(x_skip, scale_factor=self.scale_factor, mode='bicubic', align_corners=False)
         x = self.conv1(x)
         x = self.relu1(x)
         x = self.conv2(x)

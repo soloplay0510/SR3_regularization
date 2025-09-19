@@ -1,5 +1,5 @@
 {
-    "name": "celeb_tv0_s_leakyrelu",
+    "name": "tv0_CNN",
     "phase": "train", // train or val
     "gpu_ids": [0],
     "path": { //set the path
@@ -9,8 +9,6 @@
         "checkpoint": "checkpoint",
         "resume_state": null
         // "experiments/celeb_tv0_leakystdrelu_250825_150651/checkpoint/I500000_E67"
-        // "pre_train/I660000_E88"
-        // "experiments/sr_cifar10_sr3_16_128_250807_104827/checkpoint/I300000_E21" //pretrain model or training state
     },
     "datasets": {
         "train": {
@@ -23,7 +21,8 @@
             "batch_size": 4,
             "num_workers": 4,
             "use_shuffle": true,
-            "data_len": -1 // -1 represents all data used in train
+            "data_len": -1, // -1 represents all data used in train
+            "cnn_sr": true // whether use CNN processed LR as input, use false for now!!
         },
         "val": {
             "name": "celebahq",
@@ -33,7 +32,9 @@
             "l_resolution": 16,
             "r_resolution": 128,
             "data_len": 3, // data length in validation 
-            "n_run":200
+            "n_run":200,
+            "cnn_sr": false // whether use CNN processed LR as input,use false for now!!
+        
         }
     },
     "model": {
@@ -79,7 +80,7 @@
         },
         "loss": {
             "type": "l1", // l1 or l2
-            "TV1_weight": 0.0,
+            "TV1_weight": 1.0,
             "TV2_weight": 0.0,
             "TVF_weight": 0.0,
             "TVF_alpha": 1.6,//default is 1.6
@@ -89,7 +90,7 @@
     },
     "train": {
         "n_iter": 1000000,
-        "val_freq": 1e4,
+        "val_freq": 1e04,
         "save_checkpoint_freq": 1e4,
         "print_freq": 200,
         "optimizer": {

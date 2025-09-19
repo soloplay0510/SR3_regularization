@@ -11,3 +11,4 @@ wandb
 pillow
 scipy
 pywavelets
+pytorch_wavelets
