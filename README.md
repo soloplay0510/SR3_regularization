@@ -15,17 +15,6 @@ There are some implementation details that may vary from the paper's description
 
 **If you just want to upscale $(64 \times 64)\text{px} \rightarrow (512 \times 512)\text{px}$ images using the pre-trained model, check out [this google colab script](https://colab.research.google.com/drive/1G1txPI1GKueKH0cSi_DgQFKwfyJOXlhY?usp=sharing).**
 
-## Status
-### Training Step
-
-- [x] log / logger
-- [x] metrics evaluation
-- [x] multi-gpu support
-- [x] resume training / pretrained model
-- [x] validate alone script
-- [x] [Weights and Biases Logging](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement/pull/44) 🌟 NEW
-
-
 ## Usage
 ### Environment
 ```python
@@ -37,7 +26,16 @@ pip install -r requirement.txt
 # Identify the pretrained model and edit [sr|sample]_[ddpm|sr3]_[resolution option].json about "resume_state":
 "resume_state": [your pretrained model's path]
 ```
+### Pre-train CNN and generate predicted images
 
+Modify the parameters in several files in the /pretrain_CNN directory, and then run the following script directly.
+
+```shell
+python pretrain_CNN/train.py
+```
+
+The CNN predictions will be written to the specified path, 
+note that the path needs to be specified as the previously generated **dataset/xxx/CNN_sr_[lr]_[hr]**.
 ### Data Prepare
 
 #### New Start
