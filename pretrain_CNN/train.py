@@ -76,7 +76,7 @@ def main():
     # Setting parameters
   
     batch_size = 1
-    lr = 1e-4
+    learning_rate = 1e-4
     epochs = 1000
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     lr = 16
@@ -105,7 +105,7 @@ def main():
    
 
     criterion = image_compare_loss
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # Training and evaluation models, and save the model weights along with prediction images
     for epoch in range(epochs):
