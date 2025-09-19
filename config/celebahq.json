@@ -1,5 +1,5 @@
 {
-    "name": "celeb_tv0_s_leakyrelu",
+    "name": "celeb_tv0_stdrelu_image",
     "phase": "train", // train or val
     "gpu_ids": [0],
     "path": { //set the path
@@ -55,7 +55,7 @@
             ],
             "res_blocks": 2,
             "dropout": 0.2,
-            "final_activation": "s_stdleakyrelu", // default swish. Can be chosen from stdrelu, stdleakyrelu, relu, s_stdleakyrelu,and leakyrelu
+            "final_activation": "stdrelu", // default swish. Can be chosen from stdrelu, stdleakyrelu, relu, s_stdleakyrelu,and leakyrelu
             "nb_iterations" :10, // number of iterations for the STDReLu/STDReLuLeaky
             "nb_kerhalfsize": 1, // half size of the kernel for the STDReLu/STDReLuLeaky
             "leaky_alpha": 0.2, // alpha for the leaky relu

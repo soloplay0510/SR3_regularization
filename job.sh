@@ -1,6 +1,6 @@
 #!/bin/bash 
-#SBATCH -J celeb_v0_s_leakyrelu_train
-#SBATCH -o ./logs/celeb_v0_s_leakyrelu_train.o%j 
+#SBATCH -J celeb_v0_stdrelu_train_image
+#SBATCH -o ./logs/celeb_v0_stdrelu_train_image.o%j 
 #SBATCH -t 40:00:00
 #SBATCH -N 1 -n 1
 #SBATCH --gpus=1

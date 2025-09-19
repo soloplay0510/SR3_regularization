@@ -27,12 +27,14 @@ class STDReLu(nn.Module):
         # Learnable version: sigma of Gaussian function; entropic parameter epsilon; regularization parameter lam
 
         self.nb_sigma = nn.Parameter(torch.FloatTensor([5.0] * n_channel).view(n_channel, 1, 1))
-        self.lam = nn.Parameter(torch.FloatTensor([1.0]))       
+        self.lam = nn.Parameter(torch.FloatTensor([1.0])).to(self.device)
+            
         self.relu = nn.ReLU(True)
 
     def forward(self, o):
         u = self.relu(o)
-        ker = self.STD_Kernel( self.nb_sigma, self.ker_halfsize).cuda()
+        ker = self.STD_Kernel( self.nb_sigma, self.ker_halfsize)
+        ker = ker.to(self.device)
         for i in range(self.nb_iterations):
             q = F.conv2d(1.0 - 2.0 * u, ker, padding=int(self.ker_halfsize), groups=self.n_channel)
             # 2. relu
@@ -43,6 +45,7 @@ class STDReLu(nn.Module):
         x, y = torch.meshgrid(torch.arange(-halfsize, halfsize + 1), torch.arange(-halfsize, halfsize + 1))
         x = x.to(self.device)
         y = y.to(self.device)
+        sigma = sigma.to(self.device)
         ker = torch.exp(-(x.float()**2 + y.float()**2) / (2.0*sigma*sigma))
         ker = ker / (0.2*math.pi*sigma*sigma)
         ker = ker.unsqueeze(1)

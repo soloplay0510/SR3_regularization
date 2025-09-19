@@ -98,7 +98,7 @@ def define_G(opt):
         res_blocks=model_opt['unet']['res_blocks'],
         dropout=model_opt['unet']['dropout'],
         image_size=model_opt['diffusion']['image_size'],
-        final_activation=model_opt['unet']['final_activation'],
+        final_activation="swish",
         nb_iterations=model_opt['unet']['nb_iterations'],
         nb_kerhalfsize=model_opt['unet']['nb_kerhalfsize'],
         leaky_alpha=model_opt['unet']['leaky_alpha'],
@@ -117,7 +117,13 @@ def define_G(opt):
         tvf_weight=model_opt['loss']['TVF_weight'],
         tvf_alpha=model_opt['loss']['TVF_alpha'],
         wavelet_l1_weight=model_opt['loss']['wavelet_l1_weight'],
-        wavelet_type=model_opt['loss']['wavelet_type']
+        wavelet_type=model_opt['loss']['wavelet_type'],
+        std_activation_type=model_opt['unet']['final_activation'],
+        std_normalize = True,
+        nb_iterations=model_opt['unet']['nb_iterations'],
+        nb_kerhalfsize=model_opt['unet']['nb_kerhalfsize'],
+        leaky_alpha=model_opt['unet']['leaky_alpha'],
+        sleaky_beta=model_opt['unet']['sleaky_beta']
     )
     if opt['phase'] == 'train':
         # init_weights(netG, init_type='kaiming', scale=0.1)

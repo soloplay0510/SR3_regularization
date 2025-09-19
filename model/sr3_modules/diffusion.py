@@ -7,6 +7,10 @@ from functools import partial
 import numpy as np
 from tqdm import tqdm
 from regularization import *
+from stdrelu import STDReLu,STDLeakyReLu,STDSLReLU
+class Swish(nn.Module):
+    def forward(self, x):
+        return x * torch.sigmoid(x)
 
 
 def _warmup_beta(linear_start, linear_end, n_timestep, warmup_frac):
@@ -76,7 +80,13 @@ class GaussianDiffusion(nn.Module):
         tvf_weight=None,
         tvf_alpha=1.6,
         wavelet_l1_weight = None,
-        wavelet_type = "haar"
+        wavelet_type = "haar",
+        std_activation_type="swish",
+        std_normalize = True,
+        nb_iterations=10,
+        nb_kerhalfsize=1,
+        leaky_alpha=0.2,
+        sleaky_beta = 10.0
     ):
         super().__init__()
         self.channels = channels
@@ -93,6 +103,39 @@ class GaussianDiffusion(nn.Module):
         self.tvf_alpha = tvf_alpha
         self.wavelet_type = wavelet_type
         self.wavelet_l1_weight = wavelet_l1_weight
+        self.std_activation_type = std_activation_type
+        self.normalize = std_normalize
+        self.nb_iterations = nb_iterations
+        self.nb_kerhalfsize = nb_kerhalfsize
+        self.leaky_alpha = leaky_alpha
+        self.sleaky_beta = sleaky_beta    
+        self.activation_map = {
+            "identity":     lambda dim: nn.Identity(),
+            "relu":         lambda dim: nn.ReLU(inplace=False),  # no duplicate!
+            "tanh":         lambda dim: nn.Tanh(),
+            "sigmoid":      lambda dim: nn.Sigmoid(),
+            "softplus":     lambda dim: nn.Softplus(),
+            "swish":        lambda dim: Swish(),
+            "stdrelu":      lambda dim: STDReLu(
+                n_channel=dim,
+                nb_iterations=self.nb_iterations,
+                nb_kerhalfsize=self.nb_kerhalfsize
+            ),
+            "stdleakyrelu": lambda dim: STDLeakyReLu(
+                n_channel=dim,
+                nb_iterations=self.nb_iterations,
+                nb_kerhalfsize=self.nb_kerhalfsize,
+                alpha=self.leaky_alpha
+            ),
+            "s_stdleakyrelu": lambda dim: STDSLReLU(
+                n_channel=dim,
+                nb_iterations=self.nb_iterations,
+                nb_kerhalfsize=self.nb_kerhalfsize,
+                alpha=self.leaky_alpha,
+                beta=self.sleaky_beta
+            ),
+            "leakyrelu": lambda dim: nn.LeakyReLU(negative_slope=self.leaky_alpha, inplace=False),
+        }
     def set_loss(self, device):
         if self.loss_type == 'l1':
             self.loss_func = nn.L1Loss(reduction='sum').to(device)
@@ -151,9 +194,41 @@ class GaussianDiffusion(nn.Module):
             (1. - alphas_cumprod_prev) * np.sqrt(alphas) / (1. - alphas_cumprod)))
 
     def predict_start_from_noise(self, x_t, t, noise):
-        return self.sqrt_recip_alphas_cumprod[t] * x_t - \
+        y_recon = self.sqrt_recip_alphas_cumprod[t] * x_t - \
             self.sqrt_recipm1_alphas_cumprod[t] * noise
+        return y_recon
+   
+    
+    def predict_start_from_noise_pred(self, x_0, noise,noise_pred,c):
+        x64 = x_0.to(torch.float64)
+        n64 = noise.to(torch.float64)
+        p64 = noise_pred.to(torch.float64)
+        c64 = c.to(torch.float64)
+        # clamp to avoid tiny negative under sqrt from roundoff
+        s64 = torch.sqrt((1.0 - c64*c64).clamp_min(0.0))
 
+        # guard division by near-zero c
+        c_safe = c64.clamp_min(10.0 * torch.finfo(torch.float64).eps)
+
+        y64 = x64 + (n64 - p64) * (s64 / c_safe)
+        y = y64.to(x_0.dtype)
+        # return x_0+(noise-noise_pred)*torch.sqrt(1.0/continuous_sqrt_alpha_cumprod**2-1.0)
+        if self.normalize:
+            y =  torch.sigmoid(y).clone()
+        # map to [-1,1] instead of [0,1] if needed:
+        # y = y * 2 - 1
+
+
+        dim = y.shape[1]
+    # apply activation if available
+        if self.std_activation_type in self.activation_map:
+            act = self.activation_map[self.std_activation_type](dim)
+            y = act(y)
+        return y
+
+       
+        
+    
     def q_posterior(self, x_start, x_t, t):
         posterior_mean = self.posterior_mean_coef1[t] * \
             x_start + self.posterior_mean_coef2[t] * x_t
@@ -214,9 +289,11 @@ class GaussianDiffusion(nn.Module):
                 img = self.p_sample(img, i, condition_x=x,generator=generator)
                 if i % sample_inter == 0:
                     ret_img = torch.cat([ret_img, img], dim=0)
+           
         if continous:
             return ret_img
         else:
+           
             return ret_img[-1]
 
     @torch.no_grad()
@@ -229,9 +306,24 @@ class GaussianDiffusion(nn.Module):
     def super_resolution(self, x_in, continous=False,generator=None):
         return self.p_sample_loop(x_in, continous,generator=generator)
 
+    def predict_start_from_noise_continous(self, x_t,continuous_sqrt_alpha_cumprod, noise):
+        x64 = x_t.to(torch.float64)
+        c64 = continuous_sqrt_alpha_cumprod.to(torch.float64)
+        n64 = noise.to(torch.float64)
+
+        # Clamp to avoid sqrt of small negative due to fp rounding
+        one_minus_c2 = (1.0 - c64 * c64).clamp_min(0.0)
+
+        # Guard division by near-zero c
+        c_safe = c64.clamp_min(10.0 * torch.finfo(torch.float64).eps)
+
+        # Stable inverse: x0 = (x_t - sqrt(1 - c^2) * eps) / c
+        x0_64 = (x64 - torch.sqrt(one_minus_c2) * n64) / c_safe
+
+        return x0_64.to(x_t.dtype)
+    
     def q_sample(self, x_start, continuous_sqrt_alpha_cumprod, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
-
         # random gama
         return (
             continuous_sqrt_alpha_cumprod * x_start +
@@ -262,8 +354,10 @@ class GaussianDiffusion(nn.Module):
         else:
             x_recon = self.denoise_fn(
                 torch.cat([x_in['SR'], x_noisy], dim=1), continuous_sqrt_alpha_cumprod)
-        y_recon = self.predict_start_from_noise(x_noisy, t-1, x_recon)
-        loss_noise = self.loss_func(noise, x_recon)
+
+        y_recon = self.predict_start_from_noise_pred( x_start, noise,x_recon, continuous_sqrt_alpha_cumprod.view(-1, 1, 1, 1))
+        
+        loss_noise = self.loss_func(x_start, y_recon)
         loss_TV1 = self.tv1_weight*TV1(y_recon)
         loss_TV2 = self.tv2_weight*TV2(y_recon)
         loss_TVF = self.tvf_weight*FTV(y_recon, alpha=self.tvf_alpha)

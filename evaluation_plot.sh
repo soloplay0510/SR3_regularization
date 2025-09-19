@@ -49,6 +49,14 @@ cat \
 cat \
     ./experiments/celeb_tv0_relu_250901_100937/logs/train.log \
     > ./plots/relu_train.log #standard relu
+
+cat \
+    ./experiments/celeb_tv0_s_leakyrelu_250911_183300/logs/val.log \
+    > ./plots/s_leaky_relu_val.log #smooth leakyrelu
+cat \
+    ./experiments/celeb_tv0_s_leakyrelu_250911_183300/logs/train.log \
+    > ./plots/s_leaky_relu_train.log #smooth leakyrelu
+
     
 
 #### Curves of metrics
@@ -56,7 +64,7 @@ cat \
 python plot_evaluation.py ./plots/tv0_relu.log ./plots/tv0_leaky_relu.log ./plots/tv0.log --labels relu leaky_relu swish --smooth 5 --output plots/relu_leaky_relu_swish_comp.png --epoch-only
 python plot_evaluation.py ./plots/wave_val.log ./plots/tvf_val.log ./plots/tv0.log --labels wave_swish tvf_swish swish --smooth 5 --output plots/wave_tvf_swish_comp.png --epoch-only
 python plot_evaluation.py ./plots/tv0_relu.log ./plots/relu_val.log ./plots/tv0.log --labels stdrelu relu swish --smooth 5 --output plots/std_relu_comp.png --epoch-only
-python plot_evaluation.py ./plots/tv0_leaky_relu.log ./plots/leaky_relu_val.log ./plots/tv0.log --labels stdleakyrelu leakyrelu swish --smooth 5 --output plots/std_leaky_relu_comp.png --epoch-only
+python plot_evaluation.py ./plots/tv0_leaky_relu.log ./plots/leaky_relu_val.log ./plots/s_leaky_relu_val.log   ./plots/tv0.log --labels stdleakyrelu leakyrelu smooth_leakyrelu swish --smooth 5 --output plots/std_leaky_relu_comp.png --epoch-only
 
 # Dual-y single chart (epoch vs PSNR/SSIM together)
 python plot_evaluation.py ./plots/tv0_relu.log ./plots/tv0.log --dual-y --output plots/relu_swish.png --metrics psnr --smooth 5 --label relu swish --max-epoch 140
@@ -81,6 +89,8 @@ python training_eval_images.py ./experiments/celeb_tv0_wavelet_250830_105558/res
 python training_eval_images.py ./experiments/celeb_tv0_leakyrelu_250901_101200/results  --min-subdir 2 --max-subdir 81 --output-dir  plots --per-row 10 --prefix standard_leakyrelu_ --separate-groups
 
 python training_eval_images.py ./experiments/celeb_tv0_relu_250901_100937/results  --min-subdir 2 --max-subdir 81 --output-dir  plots --per-row 10 --prefix standard_relu_ --separate-groups
+
+python training_eval_images.py ./experiments/celeb_tv0_s_leakyrelu_250911_183300/results  --min-subdir 2 --max-subdir 81 --output-dir  plots --per-row 10 --prefix smooth_leakyrelu_ --separate-groups
 
 ##### Plot of losses with smoothing
 # single log

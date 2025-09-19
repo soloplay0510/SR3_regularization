@@ -79,7 +79,7 @@ class Downsample(nn.Module):
 class FinalBlock(nn.Module):
     def __init__(self, dim, dim_out, groups=32, dropout=0,activation_type="swish",nb_iterations=10,nb_kerhalfsize=1,leaky_alpha=0.2,sleaky_beta = 10.0):
         super().__init__()
-
+        
         activation_map = {
             "swish": lambda dim: Swish(),
             "stdrelu": lambda dim: STDReLu(n_channel=dim, nb_iterations=nb_iterations, nb_kerhalfsize=nb_kerhalfsize),
@@ -259,7 +259,7 @@ class UNet(nn.Module):
 
         self.ups = nn.ModuleList(ups)
 
-        self.final_conv = FinalBlock(pre_channel, default(out_channel, in_channel), groups=norm_groups,activation_type=final_activation,nb_iterations=nb_iterations,nb_kerhalfsize=nb_kerhalfsize,leaky_alpha=leaky_alpha)
+        self.final_conv = FinalBlock(pre_channel, default(out_channel, in_channel), groups=norm_groups,activation_type=final_activation,nb_iterations=nb_iterations,nb_kerhalfsize=nb_kerhalfsize,leaky_alpha=leaky_alpha,sleaky_beta = sleaky_beta)
 
     def forward(self, x, time):
         t = self.noise_level_mlp(time) if exists(
