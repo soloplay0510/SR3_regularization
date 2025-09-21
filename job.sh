@@ -9,5 +9,5 @@ conda activate pytorch_user
 ml CUDA
 nvidia-smi   
 python -c "import torch; print(torch.cuda.is_available())"
-python pretrain_CNN/train.py 
+python -m pretrain_CNN.train
 python sr.py -p train -c config/celebahq.json

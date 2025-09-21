@@ -2,15 +2,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from tqdm import tqdm
 from torchvision import transforms
 import torch.nn.functional as F
-from pretrain_CNN.dataset import SuperResolutionDataset
-from pretrain_CNN.Simple_CNN import SimpleCNN
-from pretrain_CNN.loss import image_compare_loss
-from pretrain_CNN.TV_activation import TVLeakyReLU
+# import sys, os
+# sys.path.append(os.path.abspath(".."))
+from .dataset import SuperResolutionDataset
+from .Simple_CNN import SimpleCNN
+from .loss import image_compare_loss
+from .TV_activation import TVLeakyReLU
 import os
 from pathlib import Path
 
@@ -20,19 +22,35 @@ from pathlib import Path
 def train(model, train_loader, criterion, optimizer, device):
     model.train()
     train_loss = 0.0
-
+    first= True
     for inputs, targets,*_ in tqdm(train_loader):
         inputs = inputs.to(device)
         targets = targets.to(device)
-
+        if first:
+                    # snapshot params to verify they change
+                    old_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
         outputs = model(inputs)
         loss = criterion(outputs, targets)
 
         optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
 
+        if first:
+            total_gnorm = 0.0
+            n_params = 0
+            for p in model.parameters():
+                if p.grad is not None:
+                    total_gnorm += p.grad.norm().item()
+                    n_params += 1
+            print(f"[DEBUG] grad-norm: {total_gnorm:.6f} over {n_params} params")
+        optimizer.step()
         train_loss += loss.item()
+        if first:
+            delta = 0.0
+            for k, v in model.state_dict().items():
+                delta += (v.detach() - old_state[k]).abs().sum().item()
+            print(f"[DEBUG] total-param-change: {delta:.6f}")
+            first = False
 
     return train_loss / len(train_loader)
 
@@ -75,12 +93,14 @@ def save_res(model, dataloader, device,lr,hr):
 def main():
     # Setting parameters
   
-    batch_size = 1
-    learning_rate = 1e-4
+    batch_size = 16
+    batch_size_eval = 8
+    learning_rate = 1.0
     epochs = 1000
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     lr = 16
     hr = 128
+    num_workers = 4
     scale_factor = hr // lr
     hr_dir = './dataset/celebahq_{lr}_{hr}/hr_{hr}'.format(lr=lr, hr=hr)
     lr_dir = './dataset/celebahq_{lr}_{hr}/lr_{lr}'.format(lr=lr, hr=hr)
@@ -91,12 +111,20 @@ def main():
     # Create dataset
     train_dataset = SuperResolutionDataset(hr_dir, lr_dir, transform)
     test_dataset=SuperResolutionDataset(hr_dir, lr_dir, transform,train=False)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    eval_idx = np.arange(batch_size_eval)
+    eval_dataset = Subset(test_dataset, eval_idx)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,num_workers=num_workers)
+    eval_loader = DataLoader(eval_dataset, batch_size=batch_size_eval, shuffle=False,num_workers = num_workers)
+
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False,num_workers = num_workers)
 
     # Create models, loss functions and optimizers
     model = SimpleCNN(scale_factor=scale_factor).to(device)
     ckpt_path = "./cnn_weights_not_res.pth"
+    print("Using device:", device)
+    print("Model device:", next(model.parameters()).device)
+
     if os.path.exists(ckpt_path):
         model.load_state_dict(torch.load(ckpt_path))
         print(f"Loaded weights from {ckpt_path}")
@@ -110,7 +138,7 @@ def main():
     # Training and evaluation models, and save the model weights along with prediction images
     for epoch in range(epochs):
         train_loss = train(model, train_loader, criterion, optimizer, device)
-        test_psnr = evaluate(model, test_loader, device)
+        test_psnr = evaluate(model, eval_loader, device)
         print('Epoch [{}/{}], Train Loss: {:.4f}, '
               'Test PSNR: {:.4f}'.format(epoch + 1, epochs, train_loss, test_psnr))
 

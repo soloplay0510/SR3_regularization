@@ -31,7 +31,7 @@ pip install -r requirement.txt
 Modify the parameters in several files in the /pretrain_CNN directory, and then run the following script directly.
 
 ```shell
-python pretrain_CNN/train.py
+python -m pretrain_CNN.train
 ```
 
 The CNN predictions will be written to the specified path, 
