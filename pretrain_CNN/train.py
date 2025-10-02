@@ -9,10 +9,10 @@ from torchvision import transforms
 import torch.nn.functional as F
 # import sys, os
 # sys.path.append(os.path.abspath(".."))
-from .dataset import SuperResolutionDataset
-from .Simple_CNN import SimpleCNN
-from .loss import image_compare_loss
-from .TV_activation import TVLeakyReLU
+from dataset import SuperResolutionDataset
+from Simple_CNN import SimpleCNN
+from loss import image_compare_loss
+from TV_activation import TVLeakyReLU
 import os
 from pathlib import Path
 
@@ -94,9 +94,9 @@ def main():
     # Setting parameters
   
     batch_size = 16
-    batch_size_eval = 8
+    batch_size_eval = 1  #change to larger number when working with actual large data set: 8
     learning_rate = 1.0
-    epochs = 1000
+    epochs = 10 #change to larger number when working with actual large data set: 1000
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     lr = 16
     hr = 128
