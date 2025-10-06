@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import argparse, json, os
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
@@ -13,8 +14,9 @@ from dataset import SuperResolutionDataset
 from Simple_CNN import SimpleCNN
 from loss import image_compare_loss
 from TV_activation import TVLeakyReLU
-import os
 from pathlib import Path
+import core.logger as Logger
+
 
 
 
@@ -91,22 +93,66 @@ def save_res(model, dataloader, device,lr,hr):
 
 
 def main():
-    # Setting parameters
-  
-    batch_size = 16
-    batch_size_eval = 1  #change to larger number when working with actual large data set: 8
-    learning_rate = 1.0
-    epochs = 10 #change to larger number when working with actual large data set: 1000
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    lr = 16
-    hr = 128
-    num_workers = 4
+    # ----------  JSON config ----------
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', dest='config', type=str, required=True)
+    args = parser.parse_args()
+
+    def require(cfg: dict, key: str):
+        if key not in cfg:
+            raise KeyError(f'Missing required key in pretrain config: "{key}"')
+        return cfg[key]
+    
+    args_for_logger = argparse.Namespace(
+    config=args.config,
+    phase=None,
+    gpu_ids=None,
+    debug=False,
+    enable_wandb=False,
+    log_wandb_ckpt=False,
+    log_eval=False,
+    )
+
+    opt = Logger.parse(args_for_logger)
+    opt = Logger.dict_to_nonedict(opt)
+
+    pre = opt.get('pretrain', {}) or {}
+    if not isinstance(pre, dict) or not pre:
+        raise KeyError('Missing "pretrain" block in config JSON.')  
+
+      
+    lr               = int(require(pre, 'lr'))
+    hr               = int(require(pre, 'hr'))
+    hr_dir           = require(pre, 'hr_dir')
+    lr_dir           = require(pre, 'lr_dir')
+    batch_size       = int(require(pre, 'batch_size'))
+    batch_size_eval  = int(require(pre, 'batch_size_eval'))
+    learning_rate    = float(require(pre, 'learning_rate'))
+    epochs           = int(require(pre, 'epochs'))
+    num_workers      = int(require(pre, 'num_workers'))
+
+    if hr % lr != 0:
+        raise ValueError(f'Invalid sizes: hr ({hr}) must be an integer multiple of lr ({lr}).')
     scale_factor = hr // lr
-    hr_dir = './dataset/celebahq_{lr}_{hr}/hr_{hr}'.format(lr=lr, hr=hr)
-    lr_dir = './dataset/celebahq_{lr}_{hr}/lr_{lr}'.format(lr=lr, hr=hr)
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+
+    if not os.path.isdir(hr_dir):
+        raise FileNotFoundError(f'hr_dir not found: {hr_dir}')
+    if not os.path.isdir(lr_dir):
+        raise FileNotFoundError(f'lr_dir not found: {lr_dir}')
+
+    print('[Pretrain Config Loaded]')
+    print(f'  lr={lr}, hr={hr}, scale_factor={scale_factor}')
+    print(f'  hr_dir={hr_dir}')
+    print(f'  lr_dir={lr_dir}')
+    print(f'  batch_size={batch_size}, batch_size_eval={batch_size_eval}, epochs={epochs}')
+    print(f'  learning_rate={learning_rate}, num_workers={num_workers}')
+    print('------------------------------------------------------')
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # ---------- transforms (needed for dataset) ----------
+    transform = transforms.Compose([transforms.ToTensor()])
+
 
     # Create dataset
     train_dataset = SuperResolutionDataset(hr_dir, lr_dir, transform)
