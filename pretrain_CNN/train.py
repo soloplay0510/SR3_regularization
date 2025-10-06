@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import argparse, json, os
+import argparse
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
@@ -8,13 +8,14 @@ from torchvision.utils import save_image
 from tqdm import tqdm
 from torchvision import transforms
 import torch.nn.functional as F
-# import sys, os
-# sys.path.append(os.path.abspath(".."))
+import sys, os
 from dataset import SuperResolutionDataset
 from Simple_CNN import SimpleCNN
 from loss import image_compare_loss
 from TV_activation import TVLeakyReLU
 from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]  
+sys.path.insert(0, str(ROOT))
 import core.logger as Logger
 
 
@@ -150,6 +151,8 @@ def main():
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+   
+    
     # ---------- transforms (needed for dataset) ----------
     transform = transforms.Compose([transforms.ToTensor()])
 
