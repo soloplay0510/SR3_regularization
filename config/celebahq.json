@@ -9,12 +9,12 @@
         "hr_dir": "./dataset/celebahq_64_128/hr_128",
         "lr_dir": "./dataset/celebahq_64_128/lr_64",  
         "batch_size": 16,
-        "batch_size_eval": 1,  // Increase with large data set
+        "batch_size_eval": 3,  // Increase with large data set
         "learning_rate": 1.0,
-        "epochs": 2, // Increase with large data set
+        "epochs": 2000, // Increase with large data set
         "num_workers": 4,
         "extra_args": ["-c", "config/celebahq.json"],
-        "ckpt_path": null // "./cnn_weights_not_res.pth"
+        "ckpt_path": null // "pretrain_CNN/cnn_weights.pth"
       },
     
     "gpu_ids": [0],
@@ -96,10 +96,10 @@
         },
         "loss": {
             "type": "l1", // l1 or l2
-            "TV1_weight": 1.0,
+            "TV1_weight": 1000.0,
             "TV2_weight": 0.0,
             "TVF_weight": 0.0,
-            "TVF_alpha": 1.6,//default is 1.6
+            "TVF_alpha": 0.0,//default is 1.6
             "wavelet_l1_weight": 0.0, //10000.0,
             "wavelet_type": "haar" //default is "haar". Other options includes "db", "sym", "coif"  (https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html)
         }

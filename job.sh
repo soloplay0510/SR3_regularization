@@ -1,7 +1,7 @@
 #!/bin/bash 
 #SBATCH -J celeb_v0_64_pretrain
 #SBATCH -o ./logs/celeb_v0_64_pretrain.o%j 
-#SBATCH -t 5:00:00
+#SBATCH -t 40:00:00
 #SBATCH -N 1 -n 1
 #SBATCH --gpus=1
 source /project/mwang/zxu29/anaconda3/bin/activate 

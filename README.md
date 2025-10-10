@@ -45,7 +45,7 @@ python sr.py -p pretrain -c config/celebahq.json
         "epochs": 2, // Increase with large data set
         "num_workers": 4,
         "extra_args": ["-c", "config/celebahq.json"],
-        "ckpt_path": null // "./cnn_weights_not_res.pth"
+        "ckpt_path": null // "pretrain_CNN/cnn_weights.pth"
       },
 ```
 
