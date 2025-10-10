@@ -1,19 +1,20 @@
 {
-    "name": "tv0_CNN",
+    "name": "tv0_pretrain",
     "phase": "pretrain", // train | val | pretrain
     
     "pretrain": {
         "script": "pretrain_CNN/train.py",  
-        "lr": 16,
+        "lr": 64,
         "hr": 128,
-        "hr_dir": "./dataset/celebahq_16_128/hr_128",
-        "lr_dir": "./dataset/celebahq_16_128/lr_16",  
+        "hr_dir": "./dataset/celebahq_64_128/hr_128",
+        "lr_dir": "./dataset/celebahq_64_128/lr_64",  
         "batch_size": 16,
         "batch_size_eval": 1,  // Increase with large data set
         "learning_rate": 1.0,
-        "epochs": 20, // Increase with large data set
+        "epochs": 2, // Increase with large data set
         "num_workers": 4,
-        "extra_args": ["-c", "config/celebahq.json"]
+        "extra_args": ["-c", "config/celebahq.json"],
+        "ckpt_path": null // "./cnn_weights_not_res.pth"
       },
     
     "gpu_ids": [0],
@@ -29,26 +30,26 @@
         "train": {
             "name": "celebahq",
             "mode": "HR", // whether need LR img
-            "dataroot": "dataset/celebahq_16_128",//output
+            "dataroot": "dataset/celebahq_64_128",//output
             "datatype": "img", //lmdb or img, path of img files
-            "l_resolution": 16, // low resolution need to super_resolution
+            "l_resolution": 64, // low resolution need to super_resolution
             "r_resolution": 128, // high resolution
             "batch_size": 4,
             "num_workers": 4,
             "use_shuffle": true,
             "data_len": -1, // -1 represents all data used in train
-            "cnn_sr": true // whether use CNN processed LR as input, use false for now!!
+            "cnn_sr": true // whether use CNN processed LR
         },
         "val": {
             "name": "celebahq",
             "mode": "LRHR",
-            "dataroot": "dataset/celebahq_16_128",
+            "dataroot": "dataset/celebahq_64_128",
             "datatype": "img", //lmdb or img, path of img files
-            "l_resolution": 16,
+            "l_resolution": 64,
             "r_resolution": 128,
             "data_len": 3, // data length in validation 
             "n_run":200,
-            "cnn_sr": false // whether use CNN processed LR as input,use false for now!!
+            "cnn_sr": true // whether use CNN processed LR as input
         
         }
     },

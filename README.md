@@ -28,10 +28,25 @@ pip install -r requirement.txt
 ```
 ### Pre-train CNN and generate predicted images
 
-Modify the parameters in several files in the /pretrain_CNN directory, and then run the following script directly.
+Modify the parametersn the configuration, and then run the following script directly or with job.sh.
 
 ```shell
-python -m pretrain_CNN.train
+python sr.py -p pretrain -c config/celebahq.json
+
+"pretrain": {
+        "script": "pretrain_CNN/train.py",  
+        "lr": 64,
+        "hr": 128,
+        "hr_dir": "./dataset/celebahq_64_128/hr_128",
+        "lr_dir": "./dataset/celebahq_64_128/lr_64",  
+        "batch_size": 16,
+        "batch_size_eval": 1,  // Increase with large data set
+        "learning_rate": 1.0,
+        "epochs": 2, // Increase with large data set
+        "num_workers": 4,
+        "extra_args": ["-c", "config/celebahq.json"],
+        "ckpt_path": null // "./cnn_weights_not_res.pth"
+      },
 ```
 
 The CNN predictions will be written to the specified path, 

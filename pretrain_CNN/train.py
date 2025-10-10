@@ -131,7 +131,9 @@ def main():
     learning_rate    = float(require(pre, 'learning_rate'))
     epochs           = int(require(pre, 'epochs'))
     num_workers      = int(require(pre, 'num_workers'))
-
+    ckpt_path = pre.get('ckpt_path')          # may be None
+    if ckpt_path in (None, "", "null", "None"):
+        ckpt_path = "./pretrain_CNN/cnn_weights.pth"                      # normalize all “empty” values
     if hr % lr != 0:
         raise ValueError(f'Invalid sizes: hr ({hr}) must be an integer multiple of lr ({lr}).')
     scale_factor = hr // lr
@@ -147,6 +149,7 @@ def main():
     print(f'  lr_dir={lr_dir}')
     print(f'  batch_size={batch_size}, batch_size_eval={batch_size_eval}, epochs={epochs}')
     print(f'  learning_rate={learning_rate}, num_workers={num_workers}')
+    print(f'  ckpt_path={ckpt_path}')
     print('------------------------------------------------------')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -170,7 +173,7 @@ def main():
 
     # Create models, loss functions and optimizers
     model = SimpleCNN(scale_factor=scale_factor).to(device)
-    ckpt_path = "./cnn_weights_not_res.pth"
+   
     print("Using device:", device)
     print("Model device:", next(model.parameters()).device)
 
@@ -191,7 +194,7 @@ def main():
         print('Epoch [{}/{}], Train Loss: {:.4f}, '
               'Test PSNR: {:.4f}'.format(epoch + 1, epochs, train_loss, test_psnr))
 
-        torch.save(model.state_dict(), 'cnn_weights_not_res.pth')
+        torch.save(model.state_dict(),ckpt_path)
 
     save_res(model, test_loader, device,lr,hr)
 
