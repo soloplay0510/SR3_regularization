@@ -4,18 +4,19 @@ import model as Model
 import argparse
 import logging
 import core.logger as Logger
-import core.metrics as Metrics
 from core.wandb_logger import WandbLogger
 from tensorboardX import SummaryWriter
 import os
 import numpy as np
+import sys
+import subprocess
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128.json',
                         help='JSON file for configuration')
-    parser.add_argument('-p', '--phase', type=str, choices=['train', 'val'],
-                        help='Run either train(training) or val(generation)', default='train')
+    parser.add_argument('-p', '--phase', type=str, choices=['train', 'val', 'pretrain'],
+                        help='Run either train(training), val(generation), or pretrain(CNN pretraining)', default=None) #modified for CNN
     parser.add_argument('-gpu', '--gpu_ids', type=str, default=None)
     parser.add_argument('-debug', '-d', action='store_true')
     parser.add_argument('-enable_wandb', action='store_true')
@@ -27,6 +28,50 @@ if __name__ == "__main__":
     opt = Logger.parse(args)
     # Convert to NoneDict, which return None for missing key.
     opt = Logger.dict_to_nonedict(opt)
+    
+#Pretrain CNN add on################################################################################################
+
+    effective_phase = args.phase if args.phase is not None else opt.get('phase', 'train')
+    opt['phase'] = effective_phase
+    print(f"[ResDiff] Phase selected: {effective_phase}")
+
+    # If pretrain, call the CNN pretraining script and exit
+    if effective_phase == 'pretrain':
+        pre_cfg = opt.get('pretrain', {}) or {}
+        script_path = pre_cfg.get('script', 'pretrain_CNN/train.py')
+        extra_args  = pre_cfg.get('extra_args', []) or []
+
+
+        cmd = [sys.executable, script_path] + list(map(str, extra_args))
+        print(f"[ResDiff] Running pretrain: {' '.join(cmd)}")
+
+
+        env_overrides = pre_cfg.get('env', {}) or {}
+        cwd = pre_cfg.get('cwd', None)
+        env = os.environ.copy()
+        env.update({k: str(v) for k, v in env_overrides.items()})
+
+        try:
+            subprocess.run(cmd, check=True, env=env, cwd=cwd)
+        except FileNotFoundError:
+            print(f"[ResDiff] Could not find script: {script_path}")
+            sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            print(f"[ResDiff] Pretrain failed with exit code {e.returncode}")
+            sys.exit(e.returncode)
+
+        sys.exit(0)
+##############################Pretrain CNN add on end################################################################
+
+
+
+
+
+
+    import core.metrics as Metrics
+
+
+
 
     # logging
     torch.backends.cudnn.enabled = True
@@ -52,7 +97,7 @@ if __name__ == "__main__":
 
     # dataset
     for phase, dataset_opt in opt['datasets'].items():
-        if phase == 'train' and args.phase != 'val':
+        if phase == 'train' and opt['phase'] != 'val': #modified for CNN
             train_set = Data.create_dataset(dataset_opt, phase)
             train_loader = Data.create_dataloader(
                 train_set, dataset_opt, phase)

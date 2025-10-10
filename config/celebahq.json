@@ -1,6 +1,21 @@
 {
     "name": "tv0_CNN",
-    "phase": "train", // train or val
+    "phase": "pretrain", // train | val | pretrain
+    
+    "pretrain": {
+        "script": "pretrain_CNN/train.py",  
+        "lr": 16,
+        "hr": 128,
+        "hr_dir": "./dataset/celebahq_16_128/hr_128",
+        "lr_dir": "./dataset/celebahq_16_128/lr_16",  
+        "batch_size": 16,
+        "batch_size_eval": 1,  // Increase with large data set
+        "learning_rate": 1.0,
+        "epochs": 20, // Increase with large data set
+        "num_workers": 4,
+        "extra_args": ["-c", "config/celebahq.json"]
+      },
+    
     "gpu_ids": [0],
     "path": { //set the path
         "log": "logs",
