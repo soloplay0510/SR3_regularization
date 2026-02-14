@@ -1,21 +1,21 @@
 {
-    "name": "Celeberity_VGG0.1",
+    "name": "tv0_vgg_1E2",
     "phase": "train", // train | val | pretrain
     
     "pretrain": {
         "script": "pretrain_CNN/train.py",  
-        "lr": 16,
+        "lr": 64,
         "hr": 128,
-        "hr_dir": "./dataset/celeberty_train_16_128/hr_128",
-        "lr_dir": "./dataset/celeberty_train_16_128/lr_16",  
+        "hr_dir": "./dataset/celebahq_64_128/hr_128",
+        "lr_dir": "./dataset/celebahq_64_128/lr_64",  
         "batch_size": 16,
-        "batch_size_eval": 10,  // Increase with large data set
+        "batch_size_eval": 1,  // Increase with large data set
         "learning_rate": 1.0,
-        "epochs": 1000, // Increase with large data set
+        "epochs": 2000, // Increase with large data set
         "num_workers": 4,
         "extra_args": ["-c", "config/celebahq.json"],
         "ckpt_path": null, // "pretrain_CNN/cnn_weights.pth"
-        "TVrelu": 0
+        "TVrelu": 1
       },
     
     "gpu_ids": [0],
@@ -25,17 +25,17 @@
         "results": "results",
         "checkpoint": "checkpoint",
         "resume_state": null
-        // "experiments/tv0_pretrain_251206_143111/checkpoint/I2000000_E1405"
+        // "experiments/celeb_tv0_leakystdrelu_250825_150651/checkpoint/I500000_E67"
     },
     "datasets": {
         "train": {
             "name": "celebahq",
             "mode": "HR", // whether need LR img
-            "dataroot": "dataset/celeberty_train_16_128",//output
+            "dataroot": "dataset/celebahq_64_128",//output
             "datatype": "img", //lmdb or img, path of img files
-            "l_resolution": 16, // low resolution need to super_resolution
+            "l_resolution": 64, // low resolution need to super_resolution
             "r_resolution": 128, // high resolution
-            "batch_size": 2,
+            "batch_size": 4,
             "num_workers": 4,
             "use_shuffle": true,
             "data_len": -1, // -1 represents all data used in train
@@ -44,12 +44,12 @@
         "val": {
             "name": "celebahq",
             "mode": "LRHR",
-            "dataroot": "dataset/celeberty_test_16_128",
+            "dataroot": "dataset/celebahq_64_128",
             "datatype": "img", //lmdb or img, path of img files
-            "l_resolution": 16,
+            "l_resolution": 64,
             "r_resolution": 128,
-            "data_len": 100, // data length in validation 
-            "n_run":10,
+            "data_len": 3, // data length in validation 
+            "n_run":200,
             "cnn_sr": false // whether use CNN processed LR as input
         
         }
@@ -106,16 +106,16 @@
         },
   
         "vgg": {
-           "weight": 0.1,            // Set to 0 to turn off VGG
+           "weight": 100.0,            // Set to 0 to turn off VGG
            "start_step": 5000,       // Starting iteration step of VGG
-           "vis_freq": 200000,         // VGG_feature_plot_every# iteration
+           "vis_freq": 1000,         // VGG_feature_plot_every# iteration
            "vis_num_channels": 36    // VGG_feature_plot_how many channels
         }
     },
     "train": {
         "n_iter": 1000000,
-        "val_freq": 1e05,
-        "save_checkpoint_freq": 1e5,
+        "val_freq": 1e04,
+        "save_checkpoint_freq": 1e4,
         "print_freq": 200,
         "optimizer": {
             "type": "adam",
