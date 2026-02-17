@@ -2,6 +2,7 @@
 import argparse, os, re, math
 from typing import Dict, List, Tuple
 from PIL import Image
+import numpy as np
 
 # Filenames like: <leadnum>_<idx>_sr.png  e.g., 10000_1_sr.png
 FNPAT = re.compile(r"^(\d+)_([0-9]+)_sr\.png$")
@@ -51,6 +52,39 @@ def open_and_uniform_height(paths: List[str], target_h: int = None):
     w, h = resized[0].size
     resized = [im if im.size == (w, h) else im.resize((w, h)) for im in resized]
     return resized, w, h
+
+def uniform_height_images(images: List[Image.Image], target_h: int = None):
+    """Resize in-memory images to same height and tile size."""
+    if not images:
+        return [], 0, 0
+    max_h = target_h if target_h else max(im.height for im in images)
+    resized = []
+    for im in images:
+        if im.height != max_h:
+            new_w = int(round(im.width * max_h / im.height))
+            resized.append(im.resize((new_w, max_h)))
+        else:
+            resized.append(im.copy())
+    w, h = resized[0].size
+    resized = [im if im.size == (w, h) else im.resize((w, h)) for im in resized]
+    return resized, w, h
+
+def make_diff_image(sr_path: str, hr_path: str, scale: float = 4.0) -> Image.Image:
+    """Create amplified absolute-difference visualization between SR and HR images."""
+    with Image.open(sr_path) as sr_im:
+        sr = sr_im.convert("RGB")
+    with Image.open(hr_path) as hr_im:
+        hr = hr_im.convert("RGB")
+
+    if hr.size != sr.size:
+        hr = hr.resize(sr.size, Image.BILINEAR)
+
+    sr_arr = np.asarray(sr, dtype=np.float32)
+    hr_arr = np.asarray(hr, dtype=np.float32)
+    # Mean absolute error over RGB channels; amplified for visibility.
+    diff = np.abs(sr_arr - hr_arr).mean(axis=2) * scale
+    diff = np.clip(diff, 0, 255).astype(np.uint8)
+    return Image.fromarray(diff, mode="L").convert("RGB")
 
 def make_grid(images: List[Image.Image], per_row: int, bg="white"):
     if not images:
@@ -116,6 +150,8 @@ def main():
                     help="Force tile height (px). Default: auto per idx.")
     ap.add_argument("--prefix", default="", help="Output filename prefix.")
     ap.add_argument("--spacing", type=int, default=12, help="Vertical spacing between idx grids.")
+    ap.add_argument("--diff-scale", type=float, default=4.0,
+                    help="Amplification factor for |SR-HR| diff visualization.")
     ap.add_argument("--verbose", action="store_true", help="Print scan summary.")
     args = ap.parse_args()
 
@@ -191,6 +227,48 @@ def main():
         final = stack_vertical([g for _, g in per_idx_grids], spacing=args.spacing)
         out_name = f"{args.prefix}ALL_IDX_merged.png"
         save_image(final, os.path.join(args.output_dir, out_name))
+
+    # 4) Also create SR-vs-HR difference grids for each idx if paired HR files exist
+    diff_grids: List[Tuple[str, Image.Image]] = []
+    for idx in sorted(global_groups.keys(), key=lambda x: int(x) if x.isdigit() else x):
+        items = sorted(global_groups[idx], key=lambda t: t[0])  # by leadnum
+        diff_imgs: List[Image.Image] = []
+        for leadnum, sr_path in items:
+            hr_name = f"{leadnum}_{idx}_hr.png"
+            hr_path = os.path.join(os.path.dirname(sr_path), hr_name)
+            if not os.path.isfile(hr_path):
+                if args.verbose:
+                    print(f"[DIFF][MISS] No HR pair for {sr_path}")
+                continue
+            try:
+                diff_imgs.append(make_diff_image(sr_path, hr_path, scale=args.diff_scale))
+            except Exception as exc:
+                if args.verbose:
+                    print(f"[DIFF][WARN] Failed diff for {sr_path}: {exc}")
+                continue
+
+        if not diff_imgs:
+            continue
+
+        diff_imgs, _, _ = uniform_height_images(diff_imgs, target_h=args.target_height)
+        if not diff_imgs:
+            continue
+
+        grid = make_grid(diff_imgs, per_row=args.per_row)
+        if grid:
+            diff_grids.append((idx, grid))
+
+    if diff_grids:
+        if args.separate_groups:
+            for idx, grid in diff_grids:
+                out_name = f"{args.prefix}group_{idx}_diff.png"
+                save_image(grid, os.path.join(args.output_dir, out_name))
+        else:
+            final_diff = stack_vertical([g for _, g in diff_grids], spacing=args.spacing)
+            out_name = f"{args.prefix}ALL_IDX_merged_diff.png"
+            save_image(final_diff, os.path.join(args.output_dir, out_name))
+    elif args.verbose:
+        print("[DIFF] No SR-HR pairs found, skipped diff outputs.")
 
 if __name__ == "__main__":
     main()

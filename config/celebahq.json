@@ -1,5 +1,5 @@
 {
-    "name": "tv0_vgg_1E2",
+    "name": "tv0_vgg_1E-1",
     "phase": "train", // train | val | pretrain
     
     "pretrain": {
@@ -106,7 +106,7 @@
         },
   
         "vgg": {
-           "weight": 100.0,            // Set to 0 to turn off VGG
+           "weight": 0.1,            // Set to 0 to turn off VGG
            "start_step": 5000,       // Starting iteration step of VGG
            "vis_freq": 1000,         // VGG_feature_plot_every# iteration
            "vis_num_channels": 36    // VGG_feature_plot_how many channels
