@@ -141,3 +141,9 @@ dmypy.json
 *.sh
 *.png
 *.pth
+.idea/
+*.iml
+*.bak
+*.csv
+__pycache__/
+*.pyc
