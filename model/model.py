@@ -155,10 +155,34 @@ class DDPM(BaseModel):
             network = self.netG
             if isinstance(self.netG, nn.DataParallel):
                 network = network.module
-            network.load_state_dict(torch.load(
-                gen_path), strict=(not self.opt['model']['finetune_norm']))
-            # network.load_state_dict(torch.load(
-            #     gen_path), strict=False)
+            state_dict = torch.load(gen_path)
+            strict_load = (not self.opt['model']['finetune_norm'])
+            try:
+                network.load_state_dict(state_dict, strict=strict_load)
+            except RuntimeError:
+                # Backward-compatible eval loading: allow only regularizer key mismatch.
+                if self.opt['phase'] != 'val':
+                    raise
+                incompatible = network.load_state_dict(state_dict, strict=False)
+                bad_missing = [
+                    k for k in incompatible.missing_keys
+                    if not k.startswith('trainable_regularizer.')
+                ]
+                bad_unexpected = [
+                    k for k in incompatible.unexpected_keys
+                    if not k.startswith('trainable_regularizer.')
+                ]
+                if bad_missing or bad_unexpected:
+                    raise RuntimeError(
+                        'Checkpoint/model mismatch beyond trainable_regularizer keys. '
+                        f'missing={bad_missing}, unexpected={bad_unexpected}'
+                    )
+                logger.warning(
+                    'Loaded checkpoint with non-strict mode in val phase; '
+                    'ignored trainable_regularizer key mismatch. '
+                    f'missing={incompatible.missing_keys}, '
+                    f'unexpected={incompatible.unexpected_keys}'
+                )
             if self.opt['phase'] == 'train':
                 # optimizer
                 opt = torch.load(opt_path)

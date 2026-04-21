@@ -12,6 +12,10 @@ from regularization import *
 from datetime import datetime
 
 
+
+
+
+
 def _warmup_beta(linear_start, linear_end, n_timestep, warmup_frac):
     betas = linear_end * np.ones(n_timestep, dtype=np.float64)
     warmup_time = int(n_timestep * warmup_frac)
@@ -81,6 +85,7 @@ class GaussianDiffusion(nn.Module):
         wavelet_l1_weight = None,
         wavelet_type = "haar",
         vgg_opt=None,
+        regularizer_opt=None,
     ):
         super().__init__()
         self.channels = channels
@@ -98,35 +103,81 @@ class GaussianDiffusion(nn.Module):
         self.wavelet_type = wavelet_type
         self.wavelet_l1_weight = wavelet_l1_weight
 
-
         if vgg_opt is None:
             vgg_opt = {}
+        if regularizer_opt is None:
+            regularizer_opt = {}
          
         # weight for VGG loss
         self.vgg_weight = float(vgg_opt.get("weight", 0.0))
         self.vgg_start_step = int(vgg_opt.get("start_step", 0))
         self.vgg_vis_freq = int(vgg_opt.get("vis_freq", 1000))
         self.vgg_vis_num_channels = int(vgg_opt.get("vis_num_channels", 36))
+        # weight for trainable regularizer
+        self.regularizer_weight = float(regularizer_opt.get("weight", 0.0))
+        self.regularizer_start_step = int(regularizer_opt.get("start_step", 0))
+        self.regularizer_type = str(regularizer_opt.get("type", "mlp")).lower()
+        self.regularizer_penalty = str(regularizer_opt.get("penalty", "l2")).lower()
+        reg_hidden_cfg = regularizer_opt.get("hidden_dims", regularizer_opt.get("hidden_dim", 32))
+        if isinstance(reg_hidden_cfg, int):
+            reg_hidden_dims = [reg_hidden_cfg]
+        elif isinstance(reg_hidden_cfg, (list, tuple)):
+            reg_hidden_dims = [int(v) for v in reg_hidden_cfg]
+        else:
+            raise ValueError("regularizer.hidden_dims must be int or list of ints")
+        reg_hidden_dims = [h for h in reg_hidden_dims if h > 0]
+        reg_cnn_channels_cfg = regularizer_opt.get("cnn_channels", [32, 64])
+        if isinstance(reg_cnn_channels_cfg, int):
+            reg_cnn_channels = [reg_cnn_channels_cfg]
+        elif isinstance(reg_cnn_channels_cfg, (list, tuple)):
+            reg_cnn_channels = [int(v) for v in reg_cnn_channels_cfg]
+        else:
+            raise ValueError("regularizer.cnn_channels must be int or list of ints")
+        reg_cnn_channels = [ch for ch in reg_cnn_channels if ch > 0]
+        reg_cnn_kernel_size = int(regularizer_opt.get("cnn_kernel_size", 3))
+        if reg_cnn_kernel_size <= 0 or reg_cnn_kernel_size % 2 == 0:
+            raise ValueError("regularizer.cnn_kernel_size must be a positive odd integer")
+        reg_activation = str(regularizer_opt.get("activation", "relu")).lower()
+        reg_leaky_alpha = float(regularizer_opt.get("leaky_alpha", 0.2))
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.vgg_vis_dir = os.path.join("VGG feature", timestamp)
         self.global_step = 0
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+        # --------- Trainable Regularizer ---------
+        if self.regularizer_type == "mlp":
+            regularizer_layers = [
+                nn.AdaptiveAvgPool2d(1),  # [B, C, 1, 1]
+                nn.Flatten(),             # [B, C]
+                *self._build_regularizer_mlp(
+                    in_dim=self.channels,
+                    hidden_dims=reg_hidden_dims,
+                    activation=reg_activation,
+                    leaky_alpha=reg_leaky_alpha,
+                ),
+            ]
+        elif self.regularizer_type == "cnn":
+            regularizer_layers = self._build_regularizer_cnn(
+                in_channels=self.channels,
+                conv_channels=reg_cnn_channels,
+                kernel_size=reg_cnn_kernel_size,
+                activation=reg_activation,
+                leaky_alpha=reg_leaky_alpha,
+            )
+        else:
+            raise ValueError(
+                f"Unsupported regularizer type: {self.regularizer_type}. "
+                "Expected one of ['mlp', 'cnn']."
+            )
+        self.trainable_regularizer = nn.Sequential(
+            *regularizer_layers,
+            nn.Softplus()  # ensure non-negative penalty
+        )
+
         # --------- VGG19 ---------
         import torchvision.models as models
-        import torch.nn as nn
 
-        vgg = models.vgg19(pretrained=True).features[:16]
+        vgg = models.vgg19(weights=None).features[:16]
         self.vgg = nn.Sequential(*vgg)
 
         # Freeze VGG parameters
@@ -135,6 +186,58 @@ class GaussianDiffusion(nn.Module):
 
         self.vgg.eval()    # inference mode
 
+
+
+    def _make_reg_activation(self, name: str, leaky_alpha: float = 0.2):
+        if name == "relu":
+            return nn.ReLU(inplace=True)
+        if name == "gelu":
+            return nn.GELU()
+        if name == "silu":
+            return nn.SiLU(inplace=True)
+        if name == "tanh":
+            return nn.Tanh()
+        if name == "leakyrelu":
+            return nn.LeakyReLU(negative_slope=leaky_alpha, inplace=True)
+        raise ValueError(f"Unsupported regularizer activation: {name}")
+
+    def _build_regularizer_mlp(self, in_dim: int, hidden_dims, activation: str, leaky_alpha: float):
+        dims = [in_dim] + list(hidden_dims) + [1]
+        layers = []
+        for i in range(len(dims) - 1):
+            layers.append(nn.Linear(dims[i], dims[i + 1]))
+            if i < len(dims) - 2:
+                layers.append(self._make_reg_activation(activation, leaky_alpha))
+        return layers
+
+    def _build_regularizer_cnn(
+        self,
+        in_channels: int,
+        conv_channels,
+        kernel_size: int,
+        activation: str,
+        leaky_alpha: float
+    ):
+        channels = [in_channels] + list(conv_channels)
+        layers = []
+        padding = kernel_size // 2
+        for i in range(len(channels) - 1):
+            layers.append(
+                nn.Conv2d(
+                    channels[i],
+                    channels[i + 1],
+                    kernel_size=kernel_size,
+                    stride=1,
+                    padding=padding
+                )
+            )
+            layers.append(self._make_reg_activation(activation, leaky_alpha))
+        layers.extend([
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+            nn.Linear(channels[-1], 1),
+        ])
+        return layers
 
 
 
@@ -413,7 +516,20 @@ class GaussianDiffusion(nn.Module):
         loss_TV2 = self.tv2_weight*TV2(y_recon)
         loss_TVF = self.tvf_weight*FTV(y_recon, alpha=self.tvf_alpha)
         loss_wave = self.wavelet_l1_weight*waveL1(y_recon, wname=self.wavelet_type)
-        l_total = loss_noise + loss_TV1+ loss_TV2 + loss_TVF+ loss_wave + loss_vgg
+        if self.regularizer_weight > 0 and self.global_step >= self.regularizer_start_step:
+            reg_out = self.trainable_regularizer(y_recon)
+            if self.regularizer_penalty == "l2":
+                reg_penalty = reg_out.pow(2).mean()
+            elif self.regularizer_penalty == "l1":
+                reg_penalty = reg_out.abs().mean()
+            else:
+                raise ValueError(f"Unsupported regularizer penalty: {self.regularizer_penalty}")
+            loss_trainable_regularizer = self.regularizer_weight * reg_penalty
+        else:
+            loss_trainable_regularizer = y_recon.new_tensor(0.0)
+
+        l_total = (loss_noise + loss_TV1 + loss_TV2 + loss_TVF +
+                   loss_wave + loss_vgg + loss_trainable_regularizer)
 
 
         self.global_step += 1
@@ -425,10 +541,10 @@ class GaussianDiffusion(nn.Module):
             "loss_TV2": loss_TV2,
             "loss_TVF": loss_TVF,
             "loss_wave_l1":loss_wave,
-            "loss_vgg": loss_vgg
+            "loss_vgg": loss_vgg,
+            "loss_trainable_regularizer": loss_trainable_regularizer
         }
 
 
     def forward(self, x, *args, **kwargs):
         return self.p_losses(x, *args, **kwargs)
-

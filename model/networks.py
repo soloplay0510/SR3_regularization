@@ -83,6 +83,7 @@ def init_weights(net, init_type='kaiming', scale=1, std=0.02):
 def define_G(opt):
     model_opt = opt['model']
     vgg_opt   = model_opt.get('vgg', None)
+    regularizer_opt = model_opt.get('regularizer', None)
     if model_opt['which_model_G'] == 'sr3':
         from .sr3_modules import diffusion, unet
     if ('norm_groups' not in model_opt['unet']) or model_opt['unet']['norm_groups'] is None:
@@ -114,6 +115,7 @@ def define_G(opt):
         wavelet_l1_weight=model_opt['loss']['wavelet_l1_weight'],
         wavelet_type=model_opt['loss']['wavelet_type'],
         vgg_opt=vgg_opt,
+        regularizer_opt=regularizer_opt,
     )
     if opt['phase'] == 'train':
         # init_weights(netG, init_type='kaiming', scale=0.1)

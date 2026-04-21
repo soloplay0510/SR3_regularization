@@ -7,13 +7,17 @@ import data.util as Util
 
 
 class LRHRDataset(Dataset):
-    def __init__(self, dataroot, datatype, l_resolution=16, r_resolution=128, split='train', data_len=-1, need_LR=False,cnn_sr =True):
+    def __init__(self, dataroot, datatype, l_resolution=16, r_resolution=128, split='train',
+                 data_len=-1, need_LR=False, cnn_sr=True, val_split_count=0,
+                 val_split_from_start=True):
         self.datatype = datatype
         self.l_res = l_resolution
         self.r_res = r_resolution
         self.data_len = data_len
         self.need_LR = need_LR
         self.split = split
+        self.val_split_count = max(0, int(val_split_count))
+        self.val_split_from_start = val_split_from_start
 
         if datatype == 'lmdb':
             self.env = lmdb.open(dataroot, readonly=True, lock=False,
@@ -46,10 +50,38 @@ class LRHRDataset(Dataset):
             raise NotImplementedError(
                 'data_type [{:s}] is not recognized.'.format(datatype))
 
+        self.indices = self._build_indices()
+        self.data_len = len(self.indices)
+
+    def _build_indices(self):
+        all_indices = list(range(self.dataset_len))
+        if self.val_split_count <= 0:
+            selected = all_indices
+        else:
+            val_count = min(self.val_split_count, self.dataset_len)
+            if self.val_split_from_start:
+                val_indices = all_indices[:val_count]
+                train_indices = all_indices[val_count:]
+            else:
+                val_indices = all_indices[-val_count:]
+                train_indices = all_indices[:-val_count]
+
+            if self.split == 'val':
+                selected = val_indices
+            elif self.split == 'train':
+                selected = train_indices
+            else:
+                selected = all_indices
+
+        if self.data_len <= 0:
+            return selected
+        return selected[:min(self.data_len, len(selected))]
+
     def __len__(self):
         return self.data_len
 
     def __getitem__(self, index):
+        real_index = self.indices[index]
         img_HR = None
         img_LR = None
 
@@ -57,20 +89,20 @@ class LRHRDataset(Dataset):
             with self.env.begin(write=False) as txn:
                 hr_img_bytes = txn.get(
                     'hr_{}_{}'.format(
-                        self.r_res, str(index).zfill(5)).encode('utf-8')
+                        self.r_res, str(real_index).zfill(5)).encode('utf-8')
                 )
                 sr_img_bytes = txn.get(
                     'sr_{}_{}_{}'.format(
-                        self.l_res, self.r_res, str(index).zfill(5)).encode('utf-8')
+                        self.l_res, self.r_res, str(real_index).zfill(5)).encode('utf-8')
                 )
                 if self.need_LR:
                     lr_img_bytes = txn.get(
                         'lr_{}_{}'.format(
-                            self.l_res, str(index).zfill(5)).encode('utf-8')
+                            self.l_res, str(real_index).zfill(5)).encode('utf-8')
                     )
                 # skip the invalid index
                 while (hr_img_bytes is None) or (sr_img_bytes is None):
-                    new_index = random.randint(0, self.data_len-1)
+                    new_index = random.choice(self.indices)
                     hr_img_bytes = txn.get(
                         'hr_{}_{}'.format(
                             self.r_res, str(new_index).zfill(5)).encode('utf-8')
@@ -89,15 +121,15 @@ class LRHRDataset(Dataset):
                 if self.need_LR:
                     img_LR = Image.open(BytesIO(lr_img_bytes)).convert("RGB")
         else:
-            img_HR = Image.open(self.hr_path[index]).convert("RGB")
-            img_SR = Image.open(self.sr_path[index]).convert("RGB")
+            img_HR = Image.open(self.hr_path[real_index]).convert("RGB")
+            img_SR = Image.open(self.sr_path[real_index]).convert("RGB")
             if self.need_LR:
-                img_LR = Image.open(self.lr_path[index]).convert("RGB")
+                img_LR = Image.open(self.lr_path[real_index]).convert("RGB")
         if self.need_LR:
             [img_LR, img_SR, img_HR] = Util.transform_augment(
                 [img_LR, img_SR, img_HR], split=self.split, min_max=(-1, 1))
-            return {'LR': img_LR, 'HR': img_HR, 'SR': img_SR, 'Index': index}
+            return {'LR': img_LR, 'HR': img_HR, 'SR': img_SR, 'Index': real_index}
         else:
             [img_SR, img_HR] = Util.transform_augment(
                 [img_SR, img_HR], split=self.split, min_max=(-1, 1))
-            return {'HR': img_HR, 'SR': img_SR, 'Index': index}
+            return {'HR': img_HR, 'SR': img_SR, 'Index': real_index}

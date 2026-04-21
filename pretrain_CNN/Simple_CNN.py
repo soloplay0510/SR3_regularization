@@ -14,8 +14,8 @@ class SimpleCNN(nn.Module):
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1, bias=True)
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv3 = nn.Conv2d(32, 3 * scale_factor ** 2, kernel_size=3, stride=1, padding=1, bias=True)
-        self.pixel_shuffle = nn.PixelShuffle(scale_factor)
+        self.conv3 = nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1, bias=True)
+
         self.tvleaky = TVLeakyReLU(n_channel=32)
         self._init_weights()
 
@@ -34,7 +34,7 @@ class SimpleCNN(nn.Module):
         x_up = F.interpolate(x_skip, scale_factor=self.scale_factor,
                              mode='bicubic', align_corners=False)
 
-        x = self.conv1(x)
+        x = self.conv1(x_up)
         x = self.relu1(x)
         x = self.conv2(x)
 
@@ -44,6 +44,12 @@ class SimpleCNN(nn.Module):
             x = self.relu2(x)
 
         x = self.conv3(x)
-        x = self.pixel_shuffle(x)
 
         return x + x_up
+
+
+if __name__ == '__main__':
+    x = torch.randn(7, 3, 32, 32)
+    net = SimpleCNN(use_TVrelu=False)
+    y = net(x)
+    print(y.shape)

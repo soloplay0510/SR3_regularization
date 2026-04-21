@@ -32,7 +32,9 @@ def create_dataset(dataset_opt, phase):
                 split=phase,
                 data_len=dataset_opt['data_len'],
                 need_LR=(mode == 'LRHR'),
-                cnn_sr=dataset_opt['cnn_sr'] # whether use CNN prorcessed LR as input
+                cnn_sr=dataset_opt['cnn_sr'], # whether use CNN prorcessed LR as input
+                val_split_count=dataset_opt.get('val_split_count', 0),
+                val_split_from_start=dataset_opt.get('val_split_from_start', True)
                 )
     logger = logging.getLogger('base')
     logger.info('Dataset [{:s} - {:s}] is created.'.format(dataset.__class__.__name__,
